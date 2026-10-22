@@ -37,8 +37,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .hb b{font-size:18px;line-height:1.1}
 .hb.g{border-color:var(--g);color:var(--g)}.hb.w{border-color:var(--w);color:var(--w)}.hb.b{border-color:var(--b);color:var(--b)}.hb.n{border-color:var(--n);color:var(--n)}
 .hb:active{transform:scale(.96)}
-nav{position:fixed;left:0;right:0;bottom:0;display:flex;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--bd)}
-nav button{flex:1;border:0;background:none;font-weight:700;color:var(--mu)}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;gap:4px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--bd)}
+nav button{flex:1;border:0;background:none;font-weight:700;color:var(--mu);font-size:13px;padding:10px 2px;white-space:nowrap}
 nav button.on{background:var(--tx);color:var(--bg)}
 .pl{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd)}
 .st{padding:8px 0;border-bottom:1px solid var(--bd);font-size:14px}
@@ -57,6 +57,19 @@ body::before{content:"";position:fixed;inset:0;background:url(logo.png) center 3
 body::after{content:"";position:fixed;right:-46px;bottom:64px;width:200px;height:200px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Ccircle cx='50' cy='50' r='48'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url%28%23c%29'%3E%3Crect width='100' height='100' fill='%231f5fbf'/%3E%3Cpath d='M-5 30Q30 8 60 40T105 35L105 62Q70 72 45 50T-5 58Z' fill='%23f5c518'/%3E%3Cpath d='M20 105Q35 70 60 72T105 95L105 105Z' fill='%23f5c518'/%3E%3Cpath d='M-5 5Q25 25 30 -5Z' fill='%23f5c518'/%3E%3Cpath d='M62 -5Q70 20 105 12L105 -5Z' fill='%23f5c518'/%3E%3C/g%3E%3Ccircle cx='50' cy='50' r='48' fill='none' stroke='%23fff' stroke-width='2'/%3E%3Cpath d='M2 44Q30 20 60 42T98 40' fill='none' stroke='%23fff' stroke-width='1.5'/%3E%3C/svg%3E") center/contain no-repeat;opacity:.2;z-index:-1;pointer-events:none}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .md{background:var(--bg);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:16px 16px 0 0;padding:12px 12px calc(16px + env(safe-area-inset-bottom,0px))}
+.score{font-size:24px;font-weight:700;line-height:1.1}
+.sub{font-size:12px;white-space:normal;line-height:1.25}
+.sv::after{content:"●";color:var(--ac);font-size:12px;margin-left:3px;vertical-align:middle}
+.a-h{grid-area:h}.a-p{grid-area:p}.a-s{grid-area:s}.a-t{grid-area:t}.a-r{grid-area:r}.a-u{grid-area:u}
+.land main{max-width:900px;padding:6px 10px 58px}
+.land .gl{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"h r" "p r" "s r" "t r" "u r";grid-template-rows:auto auto auto auto 1fr;column-gap:12px;align-items:start}
+.land .a-u{align-self:end}
+.land .hb{min-height:34px}.land .hb span{font-size:10px}.land .hb b{font-size:16px}
+.land .pr{padding:2px 0}.land .card{margin-bottom:8px}
+.land nav{padding:4px 10px}.land nav button{padding:6px 2px}
+html.rot{padding:0}
+html.rot body{position:fixed;top:0;left:0;width:var(--vh);height:var(--vw);transform-origin:0 0;transform:translateX(var(--vw)) rotate(90deg);overflow:auto}
+html.rot .md{max-height:80vw}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 14px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
 #toast.show{opacity:1}
 </style>
@@ -81,7 +94,8 @@ const lastAct=gid=>{const l=S.sets.filter(s=>s.gid===gid).pop();return l?l.act.s
 const CATS={
  rec:{n:'Annahme',b:[['err','Fehler','b'],['bad','Schlecht','w'],['ok','Ok','n'],['perf','Perfekt','g']]},
  att:{n:'Angriff',b:[['err','Fehler','b'],['rec','Recycle','w'],['eff','Wirkung','n'],['pt','Punkt','g']]},
- srv:{n:'Aufschlag',b:[['err','Fehler','b'],['eff','Wirkung','n'],['ace','Ass','g']]}};
+ srv:{n:'Aufschlag',b:[['err','Fehler','b'],['none','Ohne Wirkung','w'],['eff','Wirkung','n'],['ace','Ass','g']]},
+ sc:{n:'Spielstand',b:[['opp','Punkt Gegner','b'],['oerr','Gegnerfehler','n'],['us','Punkt wir','g']]}};
 const pn=id=>{const p=S.players.find(p=>p.id===id);return p?`#${esc(p.nr)} ${esc(p.name)}`:'Gelöscht'};
 const chips=(on,act)=>S.players.map(p=>`<button class="chip ${on(p)?'on':''}" data-act="${act}" data-v="${p.id}">#${esc(p.nr)} ${esc(p.name)}</button>`).join('');
 const curSet=()=>S.sets.find(s=>s.id===S.cur);
@@ -103,13 +117,15 @@ function game(s){
  const cnt=(p,c,r)=>s.ev.filter(e=>e.p===p&&e.c===c&&e.r===r).length;
  const act=S.players.filter(p=>s.act.includes(p.id));
  const o=CATS[cat];
- let h=`<div class="row top"><div class="tt"><b>${esc(s.opp)}</b> <span class="mu">Satz ${nrOf(s)}</span></div>
- <button class="sm" data-act="rot+">Läufer <b class="num">${s.rot}</b> ▸ ${s.rot%6+1}</button>
- <button class="sm ${sub?'on':''}" data-act="wech">Wechsel</button></div>`;
- if(sub)h+=`<div class="card" style="padding:8px"><div class="mu" style="margin-bottom:6px">Spieler ein- oder auswechseln</div><div class="row">${chips(p=>s.act.includes(p.id),'tga')}</div></div>`;
- h+=`<div class="row seg" style="margin-bottom:6px">${Object.entries(CATS).map(([c,x])=>`<button class="${cat===c?'on':''}" data-act="cat" data-v="${c}" style="padding:9px">${x.n}</button>`).join('')}</div>`;
- h+=act.length?act.map(p=>`<div class="pr"><span class="pn"><b>#${esc(p.nr)}</b> ${esc(p.name)}</span><div class="grid ${o.b.length===4?'g4':'g3'}">${o.b.map(([r,l,k])=>`<button class="hb ${k}" data-act="hit" data-v="${p.id}|${cat}|${r}"><span>${l}</span><b class="num">${cnt(p.id,cat,r)}</b></button>`).join('')}</div></div>`).join(''):`<div class="card mu">Niemand auf dem Feld. Tippe auf Wechsel und wähle die Spieler.</div>`;
- return h+`<div class="row" style="margin-top:8px"><button data-act="undo" style="flex:1">Rückgängig</button><button data-act="end" style="flex:1" class="${arm==='end'?'on':''}">${arm==='end'?'Wirklich beenden?':'Satz beenden'}</button></div>`;
+ const sc=replay(s),won=(Math.max(sc.u,sc.o)>=target(s))&&Math.abs(sc.u-sc.o)>=2;
+ let h=`<div class="gl"><div class="row top a-h"><div class="tt"><div class="score num"><span class="${sc.srv==='us'?'sv':''}">${sc.u}</span> : <span class="${sc.srv==='opp'?'sv':''}">${sc.o}</span></div><div class="mu sub">${esc(s.opp)} · Satz ${nrOf(s)} · Aufschlag ${sc.srv==='us'?'wir':'Gegner'}${won?` · <b style="color:var(--${sc.u>sc.o?'g':'b'})">Satz ${sc.u>sc.o?'gewonnen':'verloren'}, bitte beenden</b>`:''}</div></div>
+ <button class="sm" data-act="rot+">Läufer <b class="num">${s.rot}</b> ▸</button>
+ <button class="sm ${sub?'on':''}" data-act="wech">Wechsel</button></div>
+ <div class="grid g3 a-p" style="margin-bottom:6px">${CATS.sc.b.map(([r,l,k])=>`<button class="hb ${k}" data-act="pt" data-v="${r}" style="min-height:38px;font-size:13px">${l}</button>`).join('')}</div>`;
+ if(sub)h+=`<div class="card a-s" style="padding:8px"><div class="mu" style="margin-bottom:6px">Spieler ein- oder auswechseln</div><div class="row">${chips(p=>s.act.includes(p.id),'tga')}</div></div>`;
+ h+=`<div class="row seg a-t" style="margin-bottom:6px">${Object.entries(CATS).filter(([c])=>c!=='sc').map(([c,x])=>`<button class="${cat===c?'on':''}" data-act="cat" data-v="${c}" style="padding:7px">${x.n}</button>`).join('')}</div>`;
+ h+=`<div class="a-r">`+(act.length?act.map(p=>`<div class="pr"><span class="pn"><b>#${esc(p.nr)}</b> ${esc(p.name)}</span><div class="grid ${o.b.length===4?'g4':'g3'}">${o.b.map(([r,l,k])=>`<button class="hb ${k}" data-act="hit" data-v="${p.id}|${cat}|${r}"><span>${l}</span><b class="num">${cnt(p.id,cat,r)}</b></button>`).join('')}</div></div>`).join(''):`<div class="card mu">Niemand auf dem Feld. Tippe auf Wechsel und wähle die Spieler.</div>`)+`</div>`;
+ return h+`<div class="row a-u" style="margin-top:8px"><button data-act="undo" style="flex:1">Rückgängig</button><button data-act="end" style="flex:1" class="${arm==='end'?'on':''}">${arm==='end'?'Wirklich beenden?':'Satz beenden'}</button></div></div>`;
 }
 function players(){
  return `<div class="card"><h2>Spieler</h2>
@@ -130,7 +146,7 @@ function calc(c,e){
  const pc=v=>n?Math.round(100*v/n):0;let pills=[],key=0;
  if(c==='rec'){const avg=n?(a[1]+2*a[2]+3*a[3])/n:0,pos=pc(a[2]+a[3]);key=avg;pills=[[`Ø ${avg.toFixed(1)}`,ok&&lv(avg,2.2,1.5,1)],[`positiv ${pos}%`,ok&&lv(pos,70,50,1)]]}
  else if(c==='att'){const pt=pc(a[3]),er=pc(a[0]);key=pt-er;pills=[[`Punkt ${pt}%`,ok&&lv(pt,35,15,1)],[`Fehler ${er}%`,ok&&lv(er,10,20,0)]]}
- else{const er=pc(a[0]),dr=pc(a[1]+a[2]);key=dr-er;pills=[[`Fehler ${er}%`,ok&&lv(er,10,25,0)],[`Wirkung+Ass ${dr}%`,ok&&lv(dr,30,15,1)]]}
+ else{const er=pc(a[0]),dr=pc(a[2]+a[3]);key=dr-er;pills=[[`Fehler ${er}%`,ok&&lv(er,10,25,0)],[`Wirkung+Ass ${dr}%`,ok&&lv(dr,30,15,1)]]}
  return{a,n,pills,key};
 }
 function erow(c,name,d,team){
@@ -143,6 +159,16 @@ function evalv(){
  let h=`<div class="card"><h2>Auswertung</h2><select data-sel="fset"><option value="all">Alle Spiele</option>${S.games.slice().reverse().map(g=>`<optgroup label="${gname(g)}"><option value="g:${g.id}" ${fSet==='g:'+g.id?'selected':''}>Gesamtes Spiel</option>${sets.filter(s=>s.gid===g.id).map(s=>`<option value="s:${s.id}" ${fSet==='s:'+s.id?'selected':''}>Satz ${nrOf(s)}</option>`).join('')}</optgroup>`).join('')}</select><div class="mu" style="margin-top:8px">Farben zeigen ab 3 Aktionen, ob ein Wert stark (grün), mittel (gelb) oder schwach (rot) ist.</div></div>`;
  const ids=[...new Set(ev.map(e=>e.p))];
  if(!ids.length)return h+`<div class="card mu">Noch keine Daten.</div>`;
+ const cn=(c,r)=>ev.filter(e=>e.c===c&&e.r===r).length;
+ const pu=cn('att','pt')+cn('srv','ace')+cn('sc','oerr')+cn('sc','us'),po=cn('rec','err')+cn('att','err')+cn('srv','err')+cn('sc','opp');
+ if(pu+po){
+  const fs=sets.filter(s=>fSet==='all'||fSet==='s:'+s.id||fSet==='g:'+s.gid);
+  h+=`<div class="card"><h2>Punkte</h2><div class="leg"><span><i class="g"></i>Wir</span><span><i class="b"></i>Gegner</span></div>
+  <div class="bar">${pu?`<span class="sg g" style="flex:${pu}">${pu}</span>`:''}${po?`<span class="sg b" style="flex:${po}">${po}</span>`:''}</div>
+  <div class="st"><b>Wir:</b> Angriff ${cn('att','pt')} · Ass ${cn('srv','ace')} · Gegnerfehler ${cn('sc','oerr')} · Sonstige ${cn('sc','us')}</div>
+  <div class="st"><b>Gegner:</b> Annahmefehler ${cn('rec','err')} · Angriffsfehler ${cn('att','err')} · Aufschlagfehler ${cn('srv','err')} · Sonstige ${cn('sc','opp')}</div>
+  ${fs.map(s=>{const r=replay(s);return `<div class="st"><b>${esc(s.opp)}, Satz ${nrOf(s)}</b> <span class="mu">${s.date.split('-').reverse().join('.')}</span><b class="num" style="float:right">${r.u} : ${r.o}</b></div>`}).join('')}</div>`;
+ }
  for(const c of ['rec','att','srv']){
   const o=CATS[c],team=calc(c,ev);
   if(!team.n)continue;
@@ -155,7 +181,7 @@ function render(){
  if(!UNL){nav.innerHTML='';app.innerHTML=`<div class="card" style="margin-top:18vh"><h2>Volleyball Tracker</h2><label>PIN</label><input id="pin" type="password" autocapitalize="off" autocomplete="off" autocorrect="off"><button class="pri" data-act="unlock">Öffnen</button></div>`;return}
  const cur=curSet();
  app.innerHTML=(CFG.url?`<div id="st" class="mu" style="font-size:12px;text-align:right;margin-bottom:4px">${esc(stTxt())}</div>`:'')+(tab==='game'?(cur?game(cur):setup()):tab==='pl'?players():evalv())+(modal?`<div id="ov" class="ov"><div class="md"><div class="row sp"><h2>Einstellungen</h2><button data-act="gearx">Schließen</button></div>${settings()}</div></div>`:'');
- nav.innerHTML=[['pl','Spieler'],['game','Spiel'],['eval','Auswertung']].map(([k,l])=>`<button data-act="tab" data-v="${k}" class="${tab===k?'on':''}">${l}</button>`).join('')+`<button data-act="gear" aria-label="Einstellungen" style="flex:0 0 52px;font-size:20px">⚙</button>`;
+ nav.innerHTML=[['pl','Spieler'],['game','Spiel'],['eval','Auswertung']].map(([k,l])=>`<button data-act="tab" data-v="${k}" class="${tab===k?'on':''}">${l}</button>`).join('')+`<button data-act="orient" aria-label="Quer- oder Hochformat" class="${ROT?'on':''}" style="flex:0 0 44px;font-size:20px">⟳</button><button data-act="gear" aria-label="Einstellungen" style="flex:0 0 44px;font-size:20px">⚙</button>`;
 }
 const CK='vbcfg1';let CFG={url:'',pw:''},busy=false,tmr=null,status='';
 try{CFG=Object.assign(CFG,JSON.parse(localStorage.getItem(CK)))}catch(e){}
@@ -174,7 +200,35 @@ function applyOp(o){
 function op(o){applyOp(o);S.pend.push(o);save();ui();if(CFG.url){clearTimeout(tmr);tmr=setTimeout(sync,700)}}
 const lab=(c,r)=>[CATS[c].n,CATS[c].b.find(x=>x[0]===r)[1]];
 const code=(bn,rn)=>{for(const[c,o]of Object.entries(CATS))if(o.n===bn){const x=o.b.find(x=>x[1]===rn);if(x)return[c,x[0]]}return[bn,rn]};
-function evOp(s,e){const p=S.players.find(p=>p.id===e.p)||{name:'?',nr:''},[bn,rn]=lab(e.c,e.r);return{k:'e+',sid:s.id,e:{id:e.id,p:e.p,c:e.c,r:e.r,rot:e.rot,t:e.t},x:{datum:s.date,gegner:s.opp,satz:nrOf(s),spieler:p.name,nr:p.nr,bereich:bn,ergebnis:rn}}}
+function evOp(s,e){const p=S.players.find(p=>p.id===e.p)||{name:e.p?'?':'',nr:''},[bn,rn]=lab(e.c,e.r);return{k:'e+',sid:s.id,e:{id:e.id,p:e.p,c:e.c,r:e.r,rot:e.rot,t:e.t},x:{datum:s.date,gegner:s.opp,satz:nrOf(s),spieler:p.name,nr:p.nr,bereich:bn,ergebnis:rn}}}
+const PT={rec:{err:'o'},att:{err:'o',pt:'u'},srv:{err:'o',ace:'u'},sc:{opp:'o',oerr:'u',us:'u'}};
+const ptOf=(c,r)=>(PT[c]||{})[r]||null;
+const target=s=>nrOf(s)===5?15:25;
+function replay(s,evs){
+ let u=0,o=0,srv=s.serve==='Aufschlag'?'us':'opp';
+ for(const e of (evs||s.ev)){const p=ptOf(e.c,e.r);if(p==='u'){u++;srv='us'}else if(p==='o'){o++;srv='opp'}}
+ return{u,o,srv};
+}
+function addEv(s,e){
+ const before=replay(s),pt=ptOf(e.c,e.r);
+ op(evOp(s,{id:uid(),rot:s.rot,t:Date.now(),...e}));
+ if(pt==='u'&&before.srv==='opp')op({k:'s~',id:s.id,rot:s.rot%6+1,act:s.act});
+ if(pt)cat=replay(s).srv==='us'?'srv':'rec';
+}
+function undo(s){
+ const l=s.ev[s.ev.length-1];if(!l)return;
+ const before=replay(s,s.ev.slice(0,-1));
+ toast('Rückgängig: '+lab(l.c,l.r).join(' '));
+ op({k:'e-',id:l.id});
+ if(ptOf(l.c,l.r)==='u'&&before.srv==='opp')op({k:'s~',id:s.id,rot:(s.rot+4)%6+1,act:s.act});
+}
+let ROT=false;try{ROT=localStorage.getItem('vbrot')==='1'}catch(e){}
+function view(){
+ const port=innerHeight>innerWidth,rot=ROT&&port,c=document.documentElement;
+ c.style.setProperty('--vw',innerWidth+'px');c.style.setProperty('--vh',innerHeight+'px');
+ c.classList.toggle('rot',rot);c.classList.toggle('land',!port||rot);
+}
+addEventListener('resize',view);addEventListener('orientationchange',()=>setTimeout(view,250));view();
 function pushAll(){
  S.players.forEach(p=>S.pend.push({k:'p+',p:{id:p.id,name:p.name,nr:p.nr}}));
  S.games.forEach(g=>S.pend.push({k:'g+',g}));
@@ -224,13 +278,14 @@ document.addEventListener('click',e=>{
  else if(a==='serve')D.serve=v;
  else if(a==='rot')D.rot=+v;
  else if(a==='tog')tg(D.act,v);
- else if(a==='start'){const id=uid();let g=S.games.find(g=>g.id===D.gid);if(!g){g={id:uid(),opp:D.opp.trim()||'Gegner',date:D.date||today()};op({k:'g+',g})}op({k:'s+',s:{id,gid:g.id,opp:g.opp,date:g.date,serve:D.serve,rot:D.rot,act:D.act.slice()}});S.cur=id;D=null;save()}
+ else if(a==='start'){const id=uid();let g=S.games.find(g=>g.id===D.gid);if(!g){g={id:uid(),opp:D.opp.trim()||'Gegner',date:D.date||today()};op({k:'g+',g})}op({k:'s+',s:{id,gid:g.id,opp:g.opp,date:g.date,serve:D.serve,rot:D.rot,act:D.act.slice()}});S.cur=id;cat=D.serve==='Aufschlag'?'srv':'rec';D=null;save()}
  else if(a==='cat')cat=v;
  else if(a==='wech')sub=!sub;
  else if(a==='tga'){const na=s.act.slice();tg(na,v);op({k:'s~',id:s.id,rot:s.rot,act:na})}
  else if(a==='rot+'){op({k:'s~',id:s.id,rot:s.rot%6+1,act:s.act})}
- else if(a==='hit'){const[p,c,r]=v.split('|');op(evOp(s,{id:uid(),p,c,r,rot:s.rot,t:Date.now()}));navigator.vibrate&&navigator.vibrate(15)}
- else if(a==='undo'){const l=s.ev[s.ev.length-1];if(l){toast('Rückgängig: '+lab(l.c,l.r).join(' '));op({k:'e-',id:l.id})}}
+ else if(a==='hit'){const[p,c,r]=v.split('|');addEv(s,{p,c,r});navigator.vibrate&&navigator.vibrate(15)}
+ else if(a==='undo')undo(s);
+ else if(a==='pt'){addEv(s,{p:'',c:'sc',r:v});navigator.vibrate&&navigator.vibrate(15)}
  else if(a==='end'){if(arm!=='end'){arm='end';setTimeout(()=>{if(arm==='end'){arm=null;render()}},3000)}else{arm=null;S.cur=null;sub=false;save()}}
  else if(a==='addp'){const n=pname.value.trim(),r=pnr.value.trim();if(!n||!r){toast('Name und Nummer eingeben');return}op({k:'p+',p:{id:uid(),name:n,nr:r}})}
  else if(a==='delp'){if(arm!==v){arm=v;setTimeout(()=>{if(arm===v){arm=null;render()}},3000)}else{arm=null;op({k:'p-',id:v})}}
@@ -238,6 +293,7 @@ document.addEventListener('click',e=>{
  else if(a==='cfg'){CFG={url:cfgurl.value.trim(),pw:cfgpw.value.trim()};try{localStorage.setItem(CK,JSON.stringify(CFG))}catch(x){}sync()}
  else if(a==='syncnow')sync();
  else if(a==='pushall'){if(!CFG.url){toast('Erst URL speichern');return}pushAll()}
+ else if(a==='orient'){ROT=!ROT;try{localStorage.setItem('vbrot',ROT?'1':'0')}catch(x){}view();toast(ROT?'Querformat: Handy quer halten':'Hochformat')}
  else if(a==='gear')modal=true;
  else if(a==='gearx')modal=false;
  else if(a==='lock'){UNL=false;modal=false;try{localStorage.removeItem('vbpin')}catch(x){}}
