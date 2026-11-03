@@ -7,14 +7,15 @@ function makeEnv(source) {
   class Sheet {
     constructor(n) { this.name = n; this.rows = []; }
     appendRow(r) { this.rows.push(r.slice()); } setFrozenRows() {} getMaxRows() { return this.rows.length + 100; }
-    getLastRow() { return this.rows.length; } getLastColumn() { return this.rows[0] ? this.rows[0].length : 0; } deleteRow(i) { this.rows.splice(i - 1, 1); }
+    getLastRow() { let n = this.rows.length; while (n > 0 && this.rows[n - 1].every(x => x === '' || x === undefined)) n--; return n; } getLastColumn() { return this.rows[0] ? this.rows[0].length : 0; } deleteRow(i) { this.rows.splice(i - 1, 1); }
     getRange(r, c, nr = 1, nc = 1) {
       const sh = this;
       return { getValues: () => Array.from({ length: nr }, (_, i) => Array.from({ length: nc }, (_, j) => { const v = (sh.rows[r - 1 + i] || [])[c - 1 + j]; return v === undefined ? '' : v; })),
         setValues(v) { v.forEach((row, i) => { sh.rows[r - 1 + i] = sh.rows[r - 1 + i] || []; row.forEach((x, j) => sh.rows[r - 1 + i][c - 1 + j] = x); }); },
-        setNumberFormat() { return this; }, setFontWeight() { return this; } };
+        setNumberFormat() { return this; }, setFontWeight() { return this; },
+        clearContent() { for (let i = 0; i < nr; i++) for (let jx = 0; jx < nc; jx++) if (sh.rows[r - 1 + i]) sh.rows[r - 1 + i][c - 1 + jx] = ''; } };
     }
-    getDataRange() { return this.getRange(1, 1, this.rows.length, this.rows[0] ? this.rows[0].length : 1); }
+    getDataRange() { return this.getRange(1, 1, this.getLastRow(), this.rows[0] ? this.rows[0].length : 1); }
   }
   const sheets = {}, cache = {};
   const ctx = vm.createContext({
@@ -128,6 +129,41 @@ t('Aeltere Spieler-Tabelle ohne Spalte "rolle" wird ergaenzt', () => {
   e.sheets.Spieler.rows[0] = e.sheets.Spieler.rows[0].slice(0, 3); e.sheets.Spieler.rows[1] = e.sheets.Spieler.rows[1].slice(0, 3);
   const r = e.post({ pw: PW, ops: [{ k: 'p~', id: 'p1', role: 'DI' }] });
   assert.strictEqual(e.sheets.Spieler.rows[0][3], 'rolle'); assert.strictEqual(r.players[0].role, 'DI');
+});
+
+const SET = (id, gid = 'g1', extra = {}) => ({ k: 's+', s: { id, gid, opp: 'G', date: '2026-01-01', serve: 'Annahme', rot: 1, act: ['p1'], ...extra } });
+const GM = id => ({ k: 'g+', g: { id, opp: 'G', date: '2026-01-01' } });
+t('Satz loeschen entfernt Satz und seine Ereignisse, nicht die anderen', () => {
+  const e = good();
+  e.post({ pw: PW, ops: [P('p1'), GM('g1'), SET('s1'), SET('s2'), EV('e1'), { ...EV('e2'), sid: 's2' }, { ...EV('e3'), sid: 's2' }] });
+  const r = e.post({ pw: PW, ops: [{ k: 's-', id: 's2' }] });
+  assert.deepStrictEqual(r.sets.map(x => x.id), ['s1']); assert.deepStrictEqual(r.events.map(x => x.id), ['e1']);
+  assert.strictEqual(r.games.length, 1); assert.strictEqual(r.players.length, 1);
+});
+t('Spiel loeschen entfernt Spiel, Saetze und Ereignisse, andere Spiele bleiben', () => {
+  const e = good();
+  e.post({ pw: PW, ops: [P('p1'), GM('g1'), GM('g2'), SET('s1', 'g1'), SET('s2', 'g1'), SET('s3', 'g2'), EV('e1'), { ...EV('e2'), sid: 's2' }, { ...EV('e3'), sid: 's3' }] });
+  let r = e.post({ pw: PW, ops: [{ k: 'g-', id: 'g1' }] });
+  assert.deepStrictEqual(r.games.map(x => x.id), ['g2']); assert.deepStrictEqual(r.sets.map(x => x.id), ['s3']); assert.deepStrictEqual(r.events.map(x => x.id), ['e3']);
+  r = e.post({ pw: PW, ops: [EV('e9'), { k: 'g-', id: 'gibtsnicht' }, { k: 'g-', id: '<x>' }] }); // danach weiter schreiben moeglich
+  assert.strictEqual(r.events.length, 2); assert.strictEqual(r.skipped, 1);
+  assert.strictEqual(e.sheets.Ereignisse.getLastRow(), 3);
+});
+t('Neue Ergebnisse: Block und Spielstand-Korrekturen werden akzeptiert', () => {
+  const e = good(); e.post({ pw: PW, ops: [P('p1')] });
+  const r = e.post({ pw: PW, ops: [EV('b1', { ergebnis: 'Block', bereich: 'Angriff' }), EV('k1', { bereich: 'Spielstand', ergebnis: 'Korrektur wir +1' }), EV('k2', { bereich: 'Spielstand', ergebnis: 'Aufschlag tauschen' }), EV('k3', { bereich: 'Spielstand', ergebnis: 'Korrektur Gegner -1' })] });
+  assert.strictEqual(r.skipped, 0); assert.strictEqual(r.events.length, 4);
+});
+t('Satz-Rollen werden gespeichert, geaendert und validiert', () => {
+  const e = good();
+  let r = e.post({ pw: PW, ops: [SET('s1', 'g1', { rl: { p1: 'DI', p2: '' } })] });
+  assert.deepStrictEqual(r.sets[0].rl, { p1: 'DI', p2: '' });
+  r = e.post({ pw: PW, ops: [{ k: 's~', id: 's1', rot: 2, act: ['p1'], rl: { p1: 'LI' } }] });
+  assert.deepStrictEqual(r.sets[0].rl, { p1: 'LI' }); assert.strictEqual(r.sets[0].rot, 2);
+  r = e.post({ pw: PW, ops: [{ k: 's~', id: 's1', rot: 3, act: ['p1'] }] });          // ohne rl: bleibt
+  assert.deepStrictEqual(r.sets[0].rl, { p1: 'LI' });
+  r = e.post({ pw: PW, ops: [SET('s9', 'g1', { rl: { p1: '<b>' } }), SET('s8', 'g1', { rl: { '<x>': 'MB' } }), SET('s7', 'g1', { rl: 'x' })] });
+  assert.strictEqual(r.skipped, 3); assert.strictEqual(r.sets.length, 1);
 });
 
 let fail = 0;
