@@ -38,7 +38,9 @@ def open_app(pg, st=None, cfg=None, unlocked=True, extra=None):
     pg.evaluate('([st,cfg,ph,u,ex])=>{if(st)localStorage.setItem("vbtracker1",typeof st==="string"?st:JSON.stringify(st));if(cfg)localStorage.setItem("vbcfg1",JSON.stringify(cfg));if(u)localStorage.setItem("vbpin",ph);}', [st, cfg, PH, unlocked, extra])
     pg.reload(); pg.wait_for_timeout(300)
 def tap(pg, sel): pg.locator(sel).first.click(); pg.wait_for_timeout(120)
-def score(pg): return re.sub(r'\s+', ' ', pg.locator('.score').inner_text()).strip()
+def score(pg): return re.sub(r'\s+', ' ', pg.locator('.score').inner_text().replace('✎', '')).strip()
+def us(pg):   # eigener Punkt (alter Weg über den entfernten Knopf), ohne die Oberfläche
+    pg.evaluate("addEv(curSet(),{p:'',c:'sc',r:'us'});render()"); pg.wait_for_timeout(100)
 def rot(pg): return pg.locator('[data-act="rot+"] b').inner_text()
 def start_set(pg, serve='Annahme'):
     tap(pg, 'nav [data-act=tab][data-v=game]')
@@ -53,8 +55,8 @@ def start_set(pg, serve='Annahme'):
 def _(pg):
     open_app(pg, state()); start_set(pg, 'Annahme')
     assert score(pg) == '0 : 0' and rot(pg) == '1'
-    tap(pg, '[data-act=pt][data-v=us]'); assert score(pg) == '1 : 0' and rot(pg) == '6', score(pg) + rot(pg)   # Läufer 1 -> 6
-    tap(pg, '[data-act=pt][data-v=us]'); assert score(pg) == '2 : 0' and rot(pg) == '6'   # wir schlagen auf: keine Rotation
+    us(pg); assert score(pg) == '1 : 0' and rot(pg) == '6', score(pg) + rot(pg)   # Läufer 1 -> 6
+    us(pg); assert score(pg) == '2 : 0' and rot(pg) == '6'   # wir schlagen auf: keine Rotation
     tap(pg, '[data-act=pt][data-v=opp]'); assert score(pg) == '2 : 1' and rot(pg) == '6'
     tap(pg, '[data-act=pt][data-v=oerr]'); assert score(pg) == '3 : 1' and rot(pg) == '5'  # Side-out: 6 -> 5
     tap(pg, '[data-act=undo]'); assert score(pg) == '2 : 1' and rot(pg) == '6', score(pg) + rot(pg)
@@ -128,6 +130,83 @@ def _(pg):
         assert b.evaluate('e=>e.scrollWidth<=e.clientWidth+1'), b.inner_text()
     assert pg.locator('nav button').count() == 6
 
+@check('Punkt Gegner und Gegnerfehler springen in den richtigen Bereich')
+def _(pg):
+    open_app(pg, state()); start_set(pg, 'Aufschlag')
+    on = lambda: pg.locator('.seg.a-t button.on').inner_text()
+    tap(pg, '.seg.a-t button:has-text("Angriff")'); assert on() == 'Angriff'
+    tap(pg, '[data-act=pt][data-v=opp]'); assert on() == 'Annahme', on()       # Gegner punktet -> Gegner schlägt auf -> wir nehmen an
+    assert pg.locator('[data-act=pt][data-v=us]').count() == 0, 'Knopf Punkt wir sollte entfernt sein'
+    tap(pg, '[data-act=pt][data-v=oerr]'); assert on() == 'Aufschlag', on()    # wir punkten (Side-out) -> wir schlagen auf
+
+@check('Block zählt als Punkt, steht getrennt von der Angriffsquote')
+def _(pg):
+    open_app(pg, state()); start_set(pg, 'Aufschlag')
+    att = lambda: tap(pg, '.seg.a-t button:has-text("Angriff")')
+    att(); assert pg.locator('.pr').first.locator('.hb').count() == 5
+    tap(pg, '[data-act=hit][data-v="p1|att|blk"]'); assert score(pg) == '1 : 0', score(pg)
+    for r in ['pt', 'pt', 'pt', 'err']:
+        att(); tap(pg, f'[data-act=hit][data-v="p2|att|{r}"]')
+    tap(pg, 'nav [data-act=tab][data-v=eval]')
+    txt = pg.locator('main').inner_text()
+    assert 'Block 1' in txt and 'Punkt 75%' in txt, txt[:500]     # 3 Punkte aus 4 Angriffen, der Block verfälscht die Quote nicht
+    assert not pg.errs
+
+@check('Spielstand korrigieren und Aufschlag tauschen')
+def _(pg):
+    open_app(pg, state()); start_set(pg, 'Annahme')
+    tap(pg, '.score')
+    for r in ['wp', 'wp', 'gp']: tap(pg, f'[data-act=pt][data-v={r}]')
+    assert score(pg) == '2 : 1' and rot(pg) == '1', (score(pg), rot(pg))           # Korrektur dreht nicht
+    tap(pg, '[data-act=pt][data-v=wm]'); tap(pg, '[data-act=pt][data-v=gm]'); tap(pg, '[data-act=pt][data-v=gm]')
+    assert score(pg) == '1 : 0', score(pg)                                           # nie unter 0
+    assert 'Aufschlag Gegner' in pg.locator('.sub').inner_text()
+    tap(pg, '[data-act=pt][data-v=sv]'); assert 'Aufschlag wir' in pg.locator('.sub').inner_text()
+    tap(pg, '[data-act=undo]'); assert 'Aufschlag Gegner' in pg.locator('.sub').inner_text()
+
+@check('Spiel und Satz lassen sich in der Auswertung löschen')
+def _(pg):
+    st = state(sets=[mkset(1, us=3, opp=1), mkset(2, us=2)])
+    st['games'].append({'id': 'g2', 'opp': 'Anderer', 'date': '2026-01-02'}); s3 = mkset(3, us=5); s3['gid'] = 'g2'; st['sets'].append(s3)
+    open_app(pg, st); tap(pg, 'nav [data-act=tab][data-v=eval]')
+    assert pg.locator('[data-act=delg]').count() == 0
+    pg.locator('[data-sel=fset]').select_option('s:s2'); pg.wait_for_timeout(150)
+    tap(pg, '[data-act=delg]'); assert 'Wirklich' in pg.locator('[data-act=delg]').inner_text()
+    tap(pg, '[data-act=delg]')
+    ls = json.loads(pg.evaluate('localStorage.getItem("vbtracker1")'))
+    assert [x['id'] for x in ls['sets']] == ['s1', 's3'] and any(o['k'] == 's-' for o in ls['pend']), ls['sets']
+    pg.locator('[data-sel=fset]').select_option('g:g1'); pg.wait_for_timeout(150)
+    tap(pg, '[data-act=delg]'); tap(pg, '[data-act=delg]')
+    ls = json.loads(pg.evaluate('localStorage.getItem("vbtracker1")'))
+    assert [x['id'] for x in ls['games']] == ['g2'] and [x['id'] for x in ls['sets']] == ['s3'], ls
+    assert pg.locator('[data-act=delg]').count() == 0 and not pg.errs
+
+@check('Gelöschtes laufendes Spiel: App landet im Setup, nicht im Fehler')
+def _(pg):
+    st = state(sets=[mkset(1, us=1)]); st['cur'] = 's1'; open_app(pg, st)
+    tap(pg, 'nav [data-act=tab][data-v=eval]'); pg.locator('[data-sel=fset]').select_option('g:g1'); pg.wait_for_timeout(150)
+    tap(pg, '[data-act=delg]'); tap(pg, '[data-act=delg]'); tap(pg, 'nav [data-act=tab][data-v=game]')
+    assert 'Neuer Satz' in pg.locator('main').inner_text() and not pg.errs
+
+@check('Rollen pro Satz: Außen als Diagonal einsetzen, Sortierung, Farbe und Läufer folgen')
+def _(pg):
+    st = state(); roles = ['AA', 'MB', 'MB', 'ZP', 'DI', 'AA', 'LI']
+    for q, r in zip(st['players'], roles): q['role'] = r
+    open_app(pg, st); tap(pg, 'nav [data-act=tab][data-v=game]'); pg.fill('[data-in=opp]', 'X')
+    for i in range(7): pg.locator('.chip').nth(i).click(); pg.wait_for_timeout(40)
+    assert 'Läufer 4' in pg.locator('main').inner_text()                                # Zuspieler (Sp4) steht auf Position 4
+    pg.locator('[data-sel=rl][data-v=p1]').select_option('DI'); pg.wait_for_timeout(150)  # Sp1 (Außen) spielt hier Diagonal
+    pg.locator('[data-sel=rl][data-v=p6]').select_option('LI'); pg.wait_for_timeout(150) # Sp6 (Außen) als Libero
+    tap(pg, '[data-act=start]')
+    order = [x.strip() for x in pg.locator('.pr .pn b').all_inner_texts()]
+    assert order == ['#2', '#3', '#1', '#5', '#4', '#6', '#7'], order                    # MB, MB, DI(Sp1,Sp5), ZP, LI(Sp6,Sp7)
+    kuerzel = pg.locator('.pr .rl').all_inner_texts(); assert kuerzel == ['MB', 'MB', 'DI', 'DI', 'ZP', 'LI', 'LI'], kuerzel
+    tap(pg, '[data-act=wech]'); pg.locator('[data-sel=wrl][data-v=p4]').select_option('AA'); pg.wait_for_timeout(200)   # Zuspieler-Rolle weg
+    assert 'ZP' not in pg.locator('.pr .rl').all_inner_texts()
+    ls = json.loads(pg.evaluate('localStorage.getItem("vbtracker1")'))
+    assert ls['sets'][-1]['rl'].get('p1') == 'DI' and ls['players'][0]['role'] == 'AA', ls['sets'][-1]['rl']
+    assert not pg.errs
+
 @check('Aufschlagrecht wechselt mit jedem Satz')
 def _(pg):
     for first, expected in [('Aufschlag', 'Annahme'), ('Annahme', 'Aufschlag')]:
@@ -163,7 +242,7 @@ def _(pg):
     assert 'Läufer 4' in pg.locator('main').inner_text()
     tap(pg, '[data-act=serve][data-v=Annahme]'); tap(pg, '[data-act=start]')
     assert rot(pg) == '4'
-    tap(pg, '[data-act=pt][data-v=us]'); assert rot(pg) == '3'     # Rotation: 4 -> 3, Zuspieler rückt mit
+    us(pg); assert rot(pg) == '3'     # Rotation: 4 -> 3, Zuspieler rückt mit
     assert not pg.errs
 
 @check('Nach Aufschlag ohne Punkt/Fehler wechselt die App in den Angriff')
@@ -183,9 +262,9 @@ def _(pg):
     open_app(pg, state()); start_set(pg, 'Annahme')
     sub = lambda: pg.locator('.sub').inner_text()
     assert 'Aufschlag Gegner' in sub()
-    tap(pg, '[data-act=pt][data-v=us]'); assert '#2 Sp2' in sub(), sub()        # Position 2 rückt auf Position 1
-    tap(pg, '[data-act=pt][data-v=us]'); assert '#2 Sp2' in sub()               # weiter aufgeschlagen
-    tap(pg, '[data-act=pt][data-v=opp]'); tap(pg, '[data-act=pt][data-v=us]'); assert '#3 Sp3' in sub(), sub()
+    us(pg); assert '#2 Sp2' in sub(), sub()        # Position 2 rückt auf Position 1
+    us(pg); assert '#2 Sp2' in sub()               # weiter aufgeschlagen
+    tap(pg, '[data-act=pt][data-v=opp]'); us(pg); assert '#3 Sp3' in sub(), sub()
     tap(pg, '[data-act=undo]'); tap(pg, '[data-act=undo]'); assert '#2 Sp2' in sub(), sub()   # Rotation wird mit zurückgenommen
     tap(pg, '[data-act=undo]'); tap(pg, '[data-act=undo]'); assert 'Aufschlag Gegner' in sub() and 'Sp' not in sub()
     assert pg.locator('.pr .pp').first.inner_text() == '1'
