@@ -2,8 +2,15 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5XLf+brPh7iI5Da56wyxI6Msdpi/UeaZXRyZI5UKg+c='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tZgO5UtjKucc77ZDf9rIdPH0v/dUou69yun+ePXNNEA='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#17202a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="VB Tracker">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Volleyball Tracker</title>
 <style>
@@ -55,17 +62,17 @@ nav button.on{background:var(--tx);color:var(--bg)}
 .bar{display:flex;gap:2px;margin-top:6px;border-radius:6px;overflow:hidden}
 .sg{min-width:22px;text-align:center;font-size:12px;font-weight:700;padding:3px 0;color:var(--bg);background:var(--bd)}
 .sg.g,.pill.g,.leg i.g{background:var(--g);color:var(--bg)}.sg.w,.pill.w,.leg i.w{background:var(--w);color:var(--bg)}.sg.b,.pill.b,.leg i.b{background:var(--b);color:var(--bg)}.sg.n,.pill.n,.leg i.n{background:var(--n);color:var(--bg)}
-body::before{content:"";position:fixed;inset:0;background:url(logo.png) center 38%/min(70vw,380px) no-repeat,url(Logo.png) center 38%/min(70vw,380px) no-repeat;opacity:.08;z-index:-1;pointer-events:none}
+body::before{content:"";position:fixed;inset:0;background:var(--logo,none) center 38%/min(70vw,380px) no-repeat;opacity:.14;z-index:-1;pointer-events:none}
 body::after{content:"";position:fixed;right:-46px;bottom:64px;width:200px;height:200px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3CclipPath id='c'%3E%3Ccircle cx='50' cy='50' r='48'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url%28%23c%29'%3E%3Crect width='100' height='100' fill='%231f5fbf'/%3E%3Cpath d='M-5 30Q30 8 60 40T105 35L105 62Q70 72 45 50T-5 58Z' fill='%23f5c518'/%3E%3Cpath d='M20 105Q35 70 60 72T105 95L105 105Z' fill='%23f5c518'/%3E%3Cpath d='M-5 5Q25 25 30 -5Z' fill='%23f5c518'/%3E%3Cpath d='M62 -5Q70 20 105 12L105 -5Z' fill='%23f5c518'/%3E%3C/g%3E%3Ccircle cx='50' cy='50' r='48' fill='none' stroke='%23fff' stroke-width='2'/%3E%3Cpath d='M2 44Q30 20 60 42T98 40' fill='none' stroke='%23fff' stroke-width='1.5'/%3E%3C/svg%3E") center/contain no-repeat;opacity:.2;z-index:-1;pointer-events:none}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .md{background:var(--bg);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:16px 16px 0 0;padding:12px 12px calc(16px + env(safe-area-inset-bottom,0px))}
 .score{font-size:24px;font-weight:700;line-height:1.1}
 .sub{font-size:12px;white-space:normal;line-height:1.25}
 .sv::after{content:"●";color:var(--ac);font-size:12px;margin-left:3px;vertical-align:middle}
-.a-h{grid-area:h}.a-p{grid-area:p}.a-s{grid-area:s}.a-t{grid-area:t}.a-r{grid-area:r}.a-u{grid-area:u}
+.a-h{grid-area:h}.a-p{grid-area:p}.a-s{grid-area:s}.a-t{grid-area:t}.a-r{grid-area:r}.a-u{grid-area:u}.a-k{grid-area:k}
 .land main{max-width:none;margin:0 0 0 calc(64px + env(safe-area-inset-left,0px));padding:4px 8px 6px}
 .land body:has(nav:empty) main{margin-left:0}
-.land .gl{display:grid;grid-template-columns:minmax(190px,3fr) minmax(0,8fr);grid-template-areas:"h r" "p r" "s r" "t r" "u r";grid-template-rows:auto auto auto auto 1fr;column-gap:10px;align-items:start}
+.land .gl{display:grid;grid-template-columns:minmax(190px,3fr) minmax(0,8fr);grid-template-areas:"h r" "p r" "s r" "t r" "k r" "u r";grid-template-rows:auto auto auto auto auto 1fr;column-gap:10px;align-items:start}
 .land .a-u{align-self:end}
 .land .top{flex-wrap:wrap;gap:5px;margin-bottom:5px}.land .tt{flex:1 1 100%}.land .score{font-size:26px}
 .land .sm{flex:1;padding:7px 4px;font-size:13px}
@@ -93,6 +100,16 @@ html.rot .md{max-height:80vw}
 .hd{display:grid;grid-template-columns:92px 1fr;gap:8px;align-items:start;margin:8px 0;font-size:14px;line-height:1.4}.hd .pill{text-align:center}
 .g2{grid-template-columns:repeat(2,1fr)}.g5{grid-template-columns:repeat(5,1fr);gap:4px}.g5 .hb span{font-size:10px}
 .rg{display:grid;gap:6px}.rgr{display:grid;grid-template-columns:1fr 150px;gap:8px;align-items:center}.rgr select{padding:7px;font-size:14px}
+kbd{font:700 11px/1 ui-monospace,Menlo,Consolas,monospace;background:var(--bd);border:1px solid var(--mu);border-radius:4px;padding:2px 5px;margin:0 1px}
+.hb{position:relative}.kk{position:absolute;top:1px;right:2px;font-size:10px;padding:1px 4px}
+.kb{padding:8px}.kbuf{font-size:20px;letter-spacing:2px}.kbk{font-size:12px;margin-top:5px;line-height:1.8}.kbmsg{text-align:right;min-width:0}
+.pr.kbsel{outline:2px solid var(--ac);outline-offset:-2px;border-radius:6px}
+html.lap .gl{max-width:1150px}
+.cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:4px 0}.cgrid.c2{grid-template-columns:repeat(2,1fr)}
+.cc{border:1px solid var(--bd);border-radius:6px;padding:3px 5px;font-size:12px;display:flex;flex-direction:column;gap:1px;min-width:0}.cc.on{outline:2px solid var(--ac);background:var(--bg)}
+.cc .cp{font-size:10px;color:var(--mu)}.cc .cn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kk2{margin-right:3px;color:var(--ac)}
+.cc.on{color:var(--tx);border-color:var(--ac)}
+@media (min-width:1000px){html.lap .pr{grid-template-columns:210px 1fr}html.lap .pn{font-size:15px}}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 14px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
 #toast.show{opacity:1}
 </style>
@@ -103,7 +120,7 @@ html.rot .md{max-height:80vw}
 <div id="toast"></div>
 <script>
 const K='vbtracker1';
-let S={players:[],sets:[],cur:null},tab='game',sel=null,sub=false,fSet='all',D=null,cat='rec',arm=null,modal=false,fix=false;
+let S={players:[],sets:[],cur:null},tab='game',sel=null,sub=false,fSet='all',D=null,cat='rec',arm=null,modal=false,fix=false,catInit=false;
 let RAW=null;try{RAW=localStorage.getItem(K)}catch(e){}
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
 const uid=()=>Math.random().toString(36).slice(2,9);
@@ -179,7 +196,7 @@ function game(s){
  const cnt=(p,c,r)=>s.ev.filter(e=>e.p===p&&e.c===c&&e.r===r).length;
  const ro=p=>{const i=ROLES.findIndex(r=>r[0]===eRole(s,p));return i<0?9:i};
  const pp=padPos(s.pos),pi=id=>{const i=pp.indexOf(id);return i<0?9:i};
- const act=S.players.filter(p=>s.act.includes(p.id)).sort((a,b)=>ro(a)-ro(b)||(Number(a.nr)||0)-(Number(b.nr)||0)||a.name.localeCompare(b.name));
+ const act=actSorted(s),KM=lapOn()?kbRev(s):{};
  const o=CATS[cat];
  const sc=replay(s),won=(Math.max(sc.u,sc.o)>=target(s))&&Math.abs(sc.u-sc.o)>=2;
  const sv=sc.srv==='us'?S.players.find(p=>p.id===pp[0]):null;
@@ -190,7 +207,8 @@ function game(s){
  if(fix)h+=`<div class="card a-s" style="padding:8px"><div class="mu" style="margin-bottom:6px">Spielstand korrigieren (ändert nur den Stand, nicht die Statistik)</div><div class="grid g2">${[['wm','Wir −1'],['wp','Wir +1'],['gm','Gegner −1'],['gp','Gegner +1']].map(([r,l])=>`<button data-act="pt" data-v="${r}">${l}</button>`).join('')}</div><button data-act="pt" data-v="sv" style="width:100%;margin-top:6px">Aufschlag tauschen (jetzt: ${sc.srv==='us'?'wir':'Gegner'})</button></div>`;
  if(sub)h+=`<div class="card a-s" style="padding:8px"><div class="mu" style="margin-bottom:6px">Wechsel: Spieler auf eine Position setzen</div>${posGrid(pp,S.players,'wpos')}<div class="mu" style="margin:8px 0 4px">Zusätzlich anzeigen (z.B. Libero)</div><div class="row">${S.players.filter(p=>!pp.includes(p.id)).map(p=>`<button class="chip ${s.act.includes(p.id)?'on':''}" data-act="tga" data-v="${p.id}">#${esc(p.nr)} ${esc(p.name)}</button>`).join('')}</div><div class="mu" style="margin:8px 0 4px">Rollen in diesem Satz</div>${rolesGrid(S.players.filter(p=>s.act.includes(p.id)),s.rl,'wrl')}</div>`;
  h+=`<div class="row seg a-t" style="margin-bottom:6px">${Object.entries(CATS).filter(([c])=>c!=='sc').map(([c,x])=>`<button class="${cat===c?'on':''}" data-act="cat" data-v="${c}" style="padding:7px">${x.n}</button>`).join('')}</div>`;
- h+=`<div class="a-r">`+(act.length?act.map((p,k)=>`<div class="pr${k&&eRole(s,act[k-1])!==eRole(s,p)?' gs':''}${pi(p.id)===0&&sc.srv==='us'?' srvr':''}"><span class="pn"><span class="pp">${pi(p.id)<9?pi(p.id)+1:'·'}</span>${eRole(s,p)?`<span class="rl ${eRole(s,p)}">${eRole(s,p)}</span>`:''} <b>#${esc(p.nr)}</b> ${esc(p.name)}</span><div class="grid ${o.b.length===5?'g5':o.b.length===4?'g4':'g3'}">${o.b.map(([r,l,k])=>`<button class="hb ${k}" data-act="hit" data-v="${p.id}|${cat}|${r}"><span>${l}</span><b class="num">${cnt(p.id,cat,r)}</b></button>`).join('')}</div></div>`).join(''):`<div class="card mu">Niemand auf dem Feld. Tippe auf Wechsel und wähle die Spieler.</div>`)+`</div>`;
+ h+=lapOn()?kbHtml(s):'';
+ h+=`<div class="a-r">`+(act.length?act.map((p,k)=>`<div class="pr${k&&eRole(s,act[k-1])!==eRole(s,p)?' gs':''}${pi(p.id)===0&&sc.srv==='us'?' srvr':''}${KB.sel===p.id?' kbsel':''}"><span class="pn">${KM[p.id]?`<kbd class="kk2">${KM[p.id].toUpperCase()}</kbd>`:''}<span class="pp">${pi(p.id)<9?pi(p.id)+1:'·'}</span>${eRole(s,p)?`<span class="rl ${eRole(s,p)}">${eRole(s,p)}</span>`:''} <b>#${esc(p.nr)}</b> ${esc(p.name)}</span><div class="grid ${o.b.length===5?'g5':o.b.length===4?'g4':'g3'}">${o.b.map(([r,l,k],bi)=>`<button class="hb ${k}" data-act="hit" data-v="${p.id}|${cat}|${r}"><span>${l}</span><b class="num">${cnt(p.id,cat,r)}</b>${lapOn()?`<kbd class="kk">${bi+1}</kbd>`:''}</button>`).join('')}</div></div>`).join(''):`<div class="card mu">Niemand auf dem Feld. Tippe auf Wechsel und wähle die Spieler.</div>`)+`</div>`;
  return h+`<div class="row a-u" style="margin-top:8px"><button data-act="undo" style="flex:1">Rückgängig</button><button data-act="end" style="flex:1" class="${arm==='end'?'on':''}">${arm==='end'?'Wirklich beenden?':'Satz beenden'}</button></div></div>`;
 }
 function players(){
@@ -216,11 +234,11 @@ function helpHtml(){
  ${D(P('n','Ok'),'Zuspiel gut möglich, aber nicht genau: Der Zuspieler muss sich bewegen oder es gibt nur eingeschränkte Angriffsoptionen, zum Beispiel ohne Mitte. Note 2.')}
  ${D(P('g','Perfekt'),'Der Ball kommt genau zum Zuspieler, alle Angriffsoptionen sind möglich. Note 3.')}
  <p class="mu">„Positiv" in der Auswertung heißt Ok plus Perfekt. Das Ø ist die Durchschnittsnote von 0 bis 3.</p></details>
- <details><summary>Angriff: die vier Felder</summary>
+ <details><summary>Angriff: die fünf Felder</summary>
  ${D(P('b','Fehler'),'Ball im Netz, im Aus oder direkt geblockt. Punkt für den Gegner, wird automatisch gezählt.')}
  ${D(P('w','Recycle'),'Der Gegner wehrt den Ball ab oder nimmt ihn problemlos auf, der Ballwechsel läuft normal weiter. Der Angriff hatte keine Wirkung.')}
  ${D(P('n','Wirkung'),'Der Angriff bringt den Gegner in Not: Er kann nur eine Notlösung oder einen Freeball spielen. Es ist aber noch kein direkter Punkt.')}
- ${D(P('g','Punkt'),'Direkter Punkt für uns, wird automatisch gezählt. Direkter Punkt für uns durch den Angriff, wird automatisch gezählt.')}
+ ${D(P('g','Punkt'),'Direkter Punkt für uns durch den Angriff, wird automatisch gezählt.')}
  ${D(P('g','Block'),'Direkter Blockpunkt des Spielers, wird automatisch als Punkt für uns gezählt. In der Auswertung steht er getrennt von der Angriffsquote.')}</details>
  <details><summary>Aufschlag: die vier Felder</summary>
  ${D(P('b','Fehler'),'Netz, Aus oder Fußfehler. Punkt für den Gegner, wird automatisch gezählt.')}
@@ -228,27 +246,43 @@ function helpHtml(){
  ${D(P('n','Wirkung'),'Der Gegner kann nur eingeschränkt annehmen (schlechte Annahme oder Notlösung), aber es ist noch kein direkter Punkt.')}
  ${D(P('g','Ass'),'Direkter Punkt für uns: Der Gegner kann den Ball nicht annehmen. Wird automatisch gezählt.')}</details>
  <details><summary>Punkte, Aufschlag und Läufer</summary>
- <p><b>Punkte entstehen automatisch</b> aus Angriff „Punkt", Aufschlag „Ass" (Punkt für uns) und aus jedem „Fehler" bei Annahme, Angriff und Aufschlag (Punkt für den Gegner).</p>
+ <p><b>Punkte entstehen automatisch</b> aus Angriff „Punkt" oder „Block" und Aufschlag „Ass" (Punkt für uns) und aus jedem „Fehler" bei Annahme, Angriff und Aufschlag (Punkt für den Gegner).</p>
+ <p><b>Der Bereich springt von selbst:</b> Nach einer Annahme (außer Fehler) und nach einem Aufschlag ohne direkten Punkt oder Fehler wechselt die App zu „Angriff". Nach jedem Punkt springt sie zu „Aufschlag", wenn wir als Nächstes aufschlagen, sonst zu „Annahme".</p>
  <p>Oben gibt es zwei Tasten: <b>Punkt Gegner</b> (Punkt für den Gegner, der nicht aus einem eigenen Fehler kommt, zum Beispiel sein Angriffspunkt) und <b>Gegnerfehler</b> (ein Fehler des Gegners, der uns den Punkt bringt, zum Beispiel sein Aufschlag ins Aus). Eigene Punkte entstehen über Angriff „Punkt", Block oder Ass.</p>
- <p><b>Spielstand korrigieren:</b> Tippe auf den Spielstand oben. Dort kannst du jede Seite um 1 erhöhen oder senken und den Aufschlag tauschen. Das ändert nur den Stand, nicht die Statistik. „Rückgängig" nimmt auch eine Korrektur zurück.</p>
+ <p><b>Spielstand korrigieren:</b> Tippe auf den Spielstand oben. Dort kannst du jede Seite um 1 erhöhen oder senken und den Aufschlag tauschen. Das ändert nur den Stand, nicht die Statistik. „Rückgängig" nimmt auch eine Korrektur zurück. „Aufschlag tauschen" dreht den Läufer nicht, dafür nutzt du „Läufer" oben.</p>
  <p>Wer einen Punkt macht, schlägt als Nächstes auf. Gewinnen wir den Punkt bei gegnerischem Aufschlag, dreht die Mannschaft eine Position weiter. Daran erkennst du, wer aufschlägt: Oben steht „Aufschlag wir" mit Name, und die Zeile des Aufschlägers ist orange markiert.</p>
- <p><b>Läufer</b> ist die Position des Zuspielers. Die Reihenfolge ist 1 → 6 → 5 → 4 → 3 → 2 → 1. Position 1 ist hinten rechts und schlägt auf, vorne stehen 4, 3, 2 von links nach rechts, hinten 5, 6, 1.</p>
+ <p><b>Läufer</b> ist die Position des Zuspielers. Die Reihenfolge ist 1 → 6 → 5 → 4 → 3 → 2 → 1. Position 1 ist hinten rechts und schlägt auf, vorne stehen 4, 3, 2 von links nach rechts, hinten 5, 6, 1. Beim Satzstart ergibt sich der Läufer aus der Position des Zuspielers. Hat kein Spieler in der Aufstellung die Rolle Zuspieler, wählst du den Läufer selbst.</p>
  <p>Mit „Läufer" oben drehst du von Hand weiter, falls etwas korrigiert werden muss. „Rückgängig" nimmt die letzte Eingabe zurück, auch Punkt und Drehung.</p></details>
  <details><summary>Wechsel und Spielerzeilen</summary>
  <p>Mit <b>Wechsel</b> setzt du einen Spieler auf eine Position. Der Ausgewechselte verschwindet aus der Liste. Unter „Zusätzlich anzeigen" kannst du zum Beispiel den Libero einblenden.</p>
  <p><b>Rollen flexibel:</b> Die Rolle beim Spieler ist nur die Standardrolle. Beim Satzstart und unter „Wechsel" kannst du die Rolle für diesen Satz ändern, zum Beispiel einen Außenangreifer als Diagonal oder Libero einsetzen. Sortierung, Farbe und der Läufer richten sich nach dieser Satz-Rolle.</p>
  <p>Die Zeilen sind nach Rolle gruppiert (MB Mittelblocker, AA Außenangreifer, DI Diagonalangreifer, ZP Zuspieler, LI Libero) und innerhalb einer Rolle nach Rückennummer sortiert. Die kleine Zahl vorn ist die aktuelle Position.</p></details>
  <details><summary>Auswertung lesen</summary>
- <p>Oben wählst du, ob alle Spiele, ein ganzes Spiel oder ein einzelner Satz gezeigt wird. Die Karte „Punkte" zeigt, woher unsere Punkte kamen, und die Satzergebnisse.</p>
- <p><b>Annahme:</b> Ø-Note und Anteil positiver Annahmen. <b>Angriff:</b> Punktquote und Fehlerquote. <b>Aufschlag:</b> Fehlerquote und „Wirkung+Ass", also der Anteil der Aufschläge, die Druck gemacht haben.</p>
+ <p>Oben wählst du, ob alle Spiele, ein ganzes Spiel oder ein einzelner Satz gezeigt wird. Die Karte „Punkte" zeigt, woher unsere Punkte kamen (Angriff, Block, Ass, Gegnerfehler, Sonstige), und die Satzergebnisse.</p>
+ <p><b>Annahme:</b> Ø-Note und Anteil positiver Annahmen. <b>Angriff:</b> Punktquote und Fehlerquote, dazu die Zahl der Blockpunkte (die Quoten rechnen ohne Block). <b>Aufschlag:</b> Fehlerquote und „Wirkung+Ass", also der Anteil der Aufschläge, die Druck gemacht haben.</p>
  <p>Die Balken zeigen die Verteilung. Die Farbe der Kennzahlen: grün stark, gelb mittel, rot schwach. Sie erscheint erst ab 3 Aktionen. Grün sind zum Beispiel Annahme-Ø ab 2,2, Angriffs-Punktquote ab 35 % und Fehlerquoten bis 10 %.</p></details>
+ <details><summary>Laptop-Modus: Erfassen mit der Tastatur</summary>
+ <p>Auf einem Laptop ohne Touch schaltet sich der Tastatur-Modus von selbst ein (oder unter ⚙ → Laptop-Modus). Die Hände bleiben dabei auf der Tastatur: <b>links Bereich und Bewertung, rechts der Spieler.</b> Auf jedem Feld stehen die Zifferntasten klein in der Ecke, in jeder Spielerzeile die Spielertaste.</p>
+ <p><b>1. Bereich</b> (nur nötig, wenn die App nicht schon von selbst im richtigen Bereich ist): ${Object.entries(CATKEYS).map(([k,c])=>`<kbd>${k.toUpperCase()}</kbd> ${CATS[c].n}`).join(' · ')}. Die Reihenfolge entspricht den Reitern von links nach rechts.</p>
+ <p><b>2. Spieler:</b> Die Tasten rechts bilden das Spielfeld nach. Oben <kbd>U</kbd> <kbd>I</kbd> <kbd>O</kbd> sind die Positionen 4, 3, 2 (vorn, von links nach rechts), darunter <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> die Positionen 5, 6, 1 (hinten). Bei der Rotation wandern die Spieler auf den Tasten mit. <kbd>N</kbd> und <kbd>M</kbd> sind für zusätzliche Spieler, zum Beispiel den Libero. Im Kasten links siehst du, wer auf welcher Taste liegt.</p>
+ <p><b>3. Bewertung</b> mit den Ziffern, von links nach rechts wie die Felder. Fehler ist immer die <kbd>1</kbd>:</p>
+ ${['rec','att','srv'].map(c=>`<p><b>${CATS[c].n}:</b> ${CATS[c].b.map(([r,l],i)=>`<kbd>${i+1}</kbd> ${l}`).join(' · ')}</p>`).join('')}
+ <p>Beispiel: <kbd>W</kbd> <kbd>I</kbd> <kbd>4</kbd> ist Angriff, Spieler auf Position 3, Punkt. Beim Aufschlag brauchst du keinen Spieler: <kbd>E</kbd> <kbd>4</kbd> zählt ein Ass des aktuellen Aufschlägers.</p>
+ <p>Weitere Tasten: <kbd>A</kbd> Punkt Gegner · <kbd>S</kbd> Gegnerfehler · <kbd>⌫</kbd> einen Schritt zurück (erst die Spielerauswahl, dann die letzte Eingabe) · <kbd>Strg</kbd>+<kbd>Z</kbd> Rückgängig · <kbd>D</kbd> Läufer weiterdrehen · <kbd>F</kbd> Spielstand korrigieren · <kbd>←</kbd> <kbd>→</kbd> Bereich wechseln · <kbd>Esc</kbd> Auswahl löschen · <kbd>?</kbd> diese Anleitung. Wechsel und alles Weitere gehen mit Maus oder Touchpad.</p></details>
+ <details><summary>Zu zweit tracken</summary>
+ <p>Mit der Google Tabelle können zwei Handys denselben Satz mitschreiben. Das zweite Handy öffnet den Reiter „Spiel", wählt das Spiel und tippt auf „Satz N fortsetzen". Neue Eingaben erscheinen auf dem anderen Handy bei der nächsten Eingabe, spätestens nach 30 Sekunden.</p>
+ <p>Damit nichts doppelt gezählt wird und die Drehung nicht durcheinandergerät, teilt euch die Arbeit: Handy A zählt alles, was Punkte und Fehler entscheidet (Fehler, Punkt, Block, Ass, Punkt Gegner, Gegnerfehler). Handy B zählt nur die Bewertungen ohne Punkt: Annahme Schlecht, Ok und Perfekt, Angriff Recycle und Wirkung, Aufschlag Ohne Wirkung und Wirkung.</p></details>
  <details><summary>Weitere Funktionen</summary>
  <p><b>⟳</b> schaltet zwischen Hoch- und Querformat um. <b>⚙</b> öffnet die Einstellungen: Google Tabelle, Daten als JSON sichern und zurückspielen, App sperren.</p>
  <p><b>Spiel oder Satz löschen:</b> In der Auswertung oben das Spiel oder den Satz auswählen, dann erscheint ein Löschen-Knopf (zweimal tippen). Das löscht auch die Daten in der Google Tabelle und lässt sich nicht rückgängig machen.</p>
+ <p><b>Als App installieren:</b> Android: Chrome-Menü ⋮ → „App installieren". iPhone: Safari → Teilen → „Zum Home-Bildschirm". Auf dem iPhone hat die installierte App einen eigenen Speicher. Verbinde vorher die Google Tabelle oder sichere die Daten als JSON.</p>
  <p>Ohne Google Tabelle liegen die Daten nur auf diesem Gerät. Sichere sie dann regelmäßig über „Als JSON kopieren". Mit Tabelle sehen alle Geräte denselben Stand.</p></details></div>`;
 }
 function settings(){
- return ` <div class="card"><h2>Google Tabelle</h2><label>Web-App-URL</label><input id="cfgurl" value="${esc(CFG.url)}" placeholder="https://script.google.com/macros/s/.../exec"><label>Passwort</label><input id="cfgpw" value="${esc(CFG.pw)}">
+ return ` <div class="card"><h2>Als App installieren</h2><div class="mu">Android (Chrome): Menü ⋮ → „App installieren“ oder der Knopf unten. iPhone (Safari): Teilen → „Zum Home-Bildschirm“. Danach startet die App mit eigenem Symbol und auch ohne Netz.</div>${DEFERRED?'<button class="pri" data-act="install">App installieren</button>':''}</div>
+ <div class="card"><h2>Laptop-Modus</h2><label>Tastatursteuerung</label><select data-sel="lap"><option value="" ${!LAPPREF?'selected':''}>Automatisch (Laptop ohne Touch)</option><option value="1" ${LAPPREF==='1'?'selected':''}>Immer an</option><option value="0" ${LAPPREF==='0'?'selected':''}>Aus</option></select><div class="mu" style="margin-top:6px">Zählen nur mit der Tastatur: Bereich, Spieler, Bewertung 1 bis 5. Alle Tasten stehen in der Anleitung (?).</div></div>
+ <div class="card"><h2>Logo</h2><div id="logost" class="mu">${esc(LOGO.msg)}</div></div>
+ <div class="card"><h2>Google Tabelle</h2><label>Web-App-URL</label><input id="cfgurl" value="${esc(CFG.url)}" placeholder="https://script.google.com/macros/s/.../exec"><label>Passwort</label><input id="cfgpw" value="${esc(CFG.pw)}">
  <div class="row" style="margin-top:10px"><button data-act="cfg" style="flex:1">Speichern und verbinden</button><button data-act="syncnow" style="flex:1">Jetzt synchronisieren</button></div>
  <button data-act="pushall" style="margin-top:8px;width:100%">Lokale Daten in Tabelle übertragen</button><div id="st2" class="mu" style="margin-top:6px">${esc(stTxt())}</div></div>
  <div class="card"><h2>Daten sichern</h2><div class="row"><button data-act="exp" style="flex:1">Als JSON kopieren</button><button data-act="lock" style="flex:1">App sperren</button></div>
@@ -293,6 +327,7 @@ function evalv(){
  return h;
 }
 function render(){
+ {const c0=!catInit&&UNL?curSet():null;if(c0){catInit=true;cat=replay(c0).srv==='us'?'srv':'rec'}}
  if(!UNL){nav.innerHTML='';app.innerHTML=`<div class="card" style="margin-top:18vh"><h2>Volleyball Tracker</h2><label>PIN</label><input id="pin" type="password" autocapitalize="off" autocomplete="off" autocorrect="off"><button class="pri" data-act="unlock">Öffnen</button></div>`;return}
  const cur=curSet();
  app.innerHTML=(CFG.url?`<div id="st" class="mu" style="font-size:12px;text-align:right;margin-bottom:4px">${esc(stTxt())}</div>`:'')+(tab==='game'?(cur?game(cur):setup()):tab==='pl'?players():evalv())+(modal?`<div id="ov" class="ov"><div class="md"><div class="row sp"><h2>${modal==='help'?'Anleitung':'Einstellungen'}</h2><button data-act="gearx">Schließen</button></div>${modal==='help'?helpHtml():settings()}</div></div>`:'');
@@ -369,21 +404,97 @@ function undo(s){
  op({k:'e-',id:l.id});
  if(ptOf(l.c,l.r)==='u'&&before.srv==='opp')upd(s,{rot:prevRot(s.rot),pos:unrotPos(s.pos||[])});
 }
+let DEFERRED=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFERRED=e});
+const LOGO={msg:'Logo wird gesucht ...'};
+(function probe(){
+ const names=['logo.png','Logo.png','logo.jpg','Logo.jpg','logo.jpeg','Logo.jpeg','logo.svg','Logo.svg','logo.webp','Logo.webp','LOGO.png','logo.PNG','Logo.PNG'],base=new URL('.',location.href).href;
+ let i=0;const say=()=>{const el=document.getElementById('logost');if(el)el.textContent=LOGO.msg};
+ const next=()=>{
+  if(i>=names.length){LOGO.msg='Kein Logo gefunden. Gesucht wurde zum Beispiel unter '+base+'logo.png. Lege die Datei logo.png ins Hauptverzeichnis, direkt neben index.html.';say();return}
+  const n=names[i++],img=new Image();
+  img.onload=()=>{document.documentElement.style.setProperty('--logo','url("'+base+n+'")');LOGO.msg='Logo gefunden: '+n+' ('+img.naturalWidth+' x '+img.naturalHeight+' Pixel)';say()};
+  img.onerror=next;img.src=base+n;
+ };
+ next();
+})();
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+const CATKEYS={q:'rec',w:'att',e:'srv'};
+const PLAYKEYS=[['u',3],['i',2],['o',1],['j',4],['k',5],['l',0]];   // Taste -> Index in der Aufstellung: oben U I O = Position 4 3 2 (vorn), unten J K L = Position 5 6 1 (hinten)
+let LAPPREF=null;try{LAPPREF=localStorage.getItem('vblaptop')}catch(e){}
+const lapOn=()=>LAPPREF==='1'||(LAPPREF!=='0'&&navigator.maxTouchPoints===0&&matchMedia('(pointer:fine)').matches);
+const KB={sel:'',msg:'',tm:0};
+function actSorted(s){
+ const ro=p=>{const i=ROLES.findIndex(r=>r[0]===eRole(s,p));return i<0?9:i};
+ return S.players.filter(p=>s.act.includes(p.id)).sort((a,b)=>ro(a)-ro(b)||(Number(a.nr)||0)-(Number(b.nr)||0)||a.name.localeCompare(b.name));
+}
+function kbMap(s){
+ const pp=padPos(s.pos),rows=actSorted(s),m={};
+ if(pp.some(Boolean)){PLAYKEYS.forEach(([k,i])=>{if(pp[i])m[k]=pp[i]});const ex=rows.filter(p=>!pp.includes(p.id));['n','m'].forEach((k,i)=>{if(ex[i])m[k]=ex[i].id})}
+ else['u','i','o','j','k','l','n','m'].forEach((k,i)=>{if(rows[i])m[k]=rows[i].id});
+ return m;
+}
+const kbRev=s=>{const r={},m=kbMap(s);Object.keys(m).forEach(k=>{r[m[k]]=k});return r};
+function kbMsg(m){KB.msg=m;clearTimeout(KB.tm);KB.tm=setTimeout(()=>{KB.msg='';const el=document.getElementById('kbmsg');if(el)el.textContent=''},4500)}
+function kbHtml(s){
+ const m=kbMap(s),pp=padPos(s.pos),sel=KB.sel?S.players.find(p=>p.id===KB.sel):null;
+ const cell=(k,l)=>{const p=m[k]?S.players.find(x=>x.id===m[k]):null;return `<div class="cc${p&&p.id===KB.sel?' on':''}"><span><kbd>${k.toUpperCase()}</kbd> <span class="cp">${l}</span></span><span class="cn">${p?`#${esc(p.nr)} ${esc(p.name)}`:'–'}</span></div>`};
+ const court=pp.some(Boolean)?`<div class="mu" style="text-align:center;font-size:11px">Netz</div><div class="cgrid">${[['u','Pos. 4'],['i','Pos. 3'],['o','Pos. 2'],['j','Pos. 5'],['k','Pos. 6'],['l','Pos. 1']].map(([k,l])=>cell(k,l)).join('')}</div>`:`<div class="cgrid">${['u','i','o','j','k','l'].map(k=>cell(k,'')).join('')}</div>`;
+ const extra=['n','m'].filter(k=>m[k]).map(k=>cell(k,'zusätzlich')).join('');
+ return `<div class="card a-k kb"><div class="row sp" style="flex-wrap:nowrap"><span>Spieler: <b>${sel?`#${esc(sel.nr)} ${esc(sel.name)}`:'–'}</b></span><span id="kbmsg" class="mu kbmsg">${esc(KB.msg)}</span></div>
+ ${court}${extra?`<div class="cgrid c2">${extra}</div>`:''}
+ <div class="kbk"><b>Bereich:</b> ${Object.entries(CATKEYS).map(([k,c])=>`<kbd>${k.toUpperCase()}</kbd> ${CATS[c].n}`).join(' · ')}</div>
+ <div class="kbk"><b>${CATS[cat].n}:</b> ${CATS[cat].b.map(([r,l],i)=>`<kbd>${i+1}</kbd> ${l}`).join(' · ')}</div>
+ <div class="mu kbk"><kbd>A</kbd> Punkt Gegner · <kbd>S</kbd> Gegnerfehler · <kbd>⌫</kbd> zurück · <kbd>D</kbd> Läufer · <kbd>F</kbd> Korrektur · <kbd>?</kbd> Hilfe</div></div>`;
+}
+document.addEventListener('keydown',e=>{
+ if(!lapOn()||!UNL||e.altKey)return;
+ const tg=e.target&&e.target.tagName?e.target.tagName.toLowerCase():'';
+ if(tg==='input'||tg==='select'||tg==='textarea')return;
+ const meta=e.ctrlKey||e.metaKey,k=e.key.length===1?e.key.toLowerCase():e.key;
+ if(meta&&k!=='z')return;
+ if(k==='?'){modal=modal==='help'?false:'help';render();e.preventDefault();return}
+ if(k==='Escape'){if(modal){modal=false;render()}else if(KB.sel||fix||sub){KB.sel='';fix=false;sub=false;render()}return}
+ const s=curSet();if(modal||tab!=='game'||!s)return;
+ const m=kbMap(s);let ok=true;
+ if(meta){undo(s);kbMsg('Rückgängig')}
+ else if(has(CATKEYS,k))cat=CATKEYS[k];
+ else if(has(m,k)){KB.sel=m[k];const p=S.players.find(x=>x.id===KB.sel);kbMsg(p?'#'+p.nr+' '+p.name+' gewählt':'')}
+ else if(/^[1-9]$/.test(k)){
+  const c0=cat,list=CATS[c0].b,i=+k-1;
+  if(i>=list.length)kbMsg(CATS[c0].n+' hat nur die Bewertungen 1 bis '+list.length);
+  else{
+   let p=KB.sel?S.players.find(x=>x.id===KB.sel):null;
+   if(!p&&c0==='srv')p=S.players.find(x=>x.id===padPos(s.pos)[0]);
+   if(!p)kbMsg('Erst den Spieler wählen (U I O J K L)');
+   else{const r=list[i][0];addEv(s,{p:p.id,c:c0,r});kbMsg('✓ #'+p.nr+' '+p.name+' · '+lab(c0,r).join(' '));KB.sel=''}
+  }
+ }
+ else if(k==='a'){addEv(s,{p:'',c:'sc',r:'opp'});kbMsg('Punkt Gegner')}
+ else if(k==='s'){addEv(s,{p:'',c:'sc',r:'oerr'});kbMsg('Gegnerfehler')}
+ else if(k==='d'){upd(s,{rot:nextRot(s.rot),pos:rotPos(s.pos||[])});kbMsg('Läufer '+s.rot)}
+ else if(k==='f'){fix=!fix;sub=false}
+ else if(k==='Backspace'){if(KB.sel){KB.sel='';kbMsg('Auswahl aufgehoben')}else{undo(s);kbMsg('Rückgängig')}}
+ else if(k==='ArrowRight'||k==='ArrowLeft'){const o=['rec','att','srv'];cat=o[(o.indexOf(cat)+(k==='ArrowRight'?1:2))%3]}
+ else ok=false;
+ if(ok){e.preventDefault();render()}
+});
 let ROT=false;try{ROT=localStorage.getItem('vbrot')==='1'}catch(e){}
 function view(){
  const port=innerHeight>innerWidth,rot=ROT&&port,c=document.documentElement;
  c.style.setProperty('--vw',innerWidth+'px');c.style.setProperty('--vh',innerHeight+'px');
- c.classList.toggle('rot',rot);c.classList.toggle('land',!port||rot);
+ c.classList.toggle('rot',rot);c.classList.toggle('land',!port||rot);c.classList.toggle('lap',lapOn());
 }
 addEventListener('resize',view);addEventListener('orientationchange',()=>setTimeout(view,250));view();
-function pushAll(){
+function queueAll(){
  S.players.forEach(p=>S.pend.push({k:'p+',p:{id:p.id,name:p.name,nr:p.nr,role:p.role||''}}));
  S.games.forEach(g=>S.pend.push({k:'g+',g}));
  S.sets.forEach(s=>{S.pend.push({k:'s+',s:{id:s.id,gid:s.gid,opp:s.opp,date:s.date,serve:s.serve,rot:s.rot,act:s.act,pos:s.pos||[],rl:s.rl||{}}});s.ev.forEach(e=>S.pend.push(evOp(s,e)))});
- save();sync();
+ save();
 }
+function pushAll(){queueAll();sync()}
 async function sync(){
  if(!CFG.url||busy||!UNL)return;
+ if(!CFG.init&&(S.players.length||S.games.length||S.sets.length))queueAll();   // erste Verbindung: lokale Daten zuerst hochladen, nie von einer leeren Tabelle überschreiben lassen
  busy=true;status='Synchronisiere...';ui();
  const ops=S.pend.slice();let ok=false;
  try{
@@ -399,6 +510,7 @@ async function sync(){
   if(S.cur&&!S.sets.some(s=>s.id===S.cur))S.cur=null;
   status='Synchronisiert '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
   ok=true;save();
+  if(!CFG.init){CFG.init=true;try{localStorage.setItem(CK,JSON.stringify(CFG))}catch(x){}}
  }catch(e){status=/fetch|network/i.test(e.message)?'Keine Verbindung zur Tabelle. Web-App-URL und Zugriff Jeder prüfen':'Fehler: '+e.message}
  busy=false;ui();
  if(ok&&!modal&&(tab==='eval'||(tab==='game'&&curSet())))render();
@@ -418,11 +530,12 @@ async function unlock(){
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='pin')unlock()});
 const tg=(a,v)=>{const i=a.indexOf(v);i<0?a.push(v):a.splice(i,1)};
 document.addEventListener('input',e=>{const k=e.target.dataset.in;if(k&&D)D[k]=e.target.value});
-document.addEventListener('change',e=>{const k=e.target.dataset.sel;if(k==='fset'){fSet=e.target.value;render()}else if(k==='gid'&&D){D.gid=e.target.value;if(D.gid!=='new'){D.act=lastAct(D.gid);D.pos=fixPos(D.act,lastPos(D.gid));D.serve=nextServe(D.gid);D.rl=lastRl(D.gid)}render()}else if(k==='pos'&&D){const i=+e.target.dataset.i,v=e.target.value,j=v?D.pos.indexOf(v):-1;if(j>=0)D.pos[j]=D.pos[i];D.pos[i]=v;render()}else if(k==='rl'&&D){D.rl[e.target.dataset.v]=e.target.value;render()}else if(k==='wrl'){const s=curSet();if(s){const rl={...(s.rl||{})};rl[e.target.dataset.v]=e.target.value;upd(s,{rl});render()}}else if(k==='prole'){op({k:'p~',id:e.target.dataset.v,role:e.target.value});render()}else if(k==='wpos'){const s=curSet();if(s){setPos(s,+e.target.dataset.i,e.target.value);render()}}});
+document.addEventListener('change',e=>{const k=e.target.dataset.sel;if(k==='fset'){fSet=e.target.value;render()}else if(k==='gid'&&D){D.gid=e.target.value;if(D.gid!=='new'){D.act=lastAct(D.gid);D.pos=fixPos(D.act,lastPos(D.gid));D.serve=nextServe(D.gid);D.rl=lastRl(D.gid)}render()}else if(k==='pos'&&D){const i=+e.target.dataset.i,v=e.target.value,j=v?D.pos.indexOf(v):-1;if(j>=0)D.pos[j]=D.pos[i];D.pos[i]=v;render()}else if(k==='lap'){LAPPREF=e.target.value||null;try{if(LAPPREF)localStorage.setItem('vblaptop',LAPPREF);else localStorage.removeItem('vblaptop')}catch(x){}view();render()}else if(k==='rl'&&D){D.rl[e.target.dataset.v]=e.target.value;render()}else if(k==='wrl'){const s=curSet();if(s){const rl={...(s.rl||{})};rl[e.target.dataset.v]=e.target.value;upd(s,{rl});render()}}else if(k==='prole'){op({k:'p~',id:e.target.dataset.v,role:e.target.value});render()}else if(k==='wpos'){const s=curSet();if(s){setPos(s,+e.target.dataset.i,e.target.value);render()}}});
 document.addEventListener('click',e=>{
  if(e.target.id==='ov'){modal=false;render();return}
  const b=e.target.closest('[data-act]');if(!b)return;
  const a=b.dataset.act,v=b.dataset.v,s=curSet();
+ if(lapOn()&&document.activeElement&&document.activeElement.blur)document.activeElement.blur();
  if(a==='unlock'){unlock();return}
  if(a!=='end'&&a!=='delp'&&a!=='delg')arm=null;
  if(a==='tab')tab=v;
@@ -442,11 +555,12 @@ document.addEventListener('click',e=>{
  else if(a==='end'){if(arm!=='end'){arm='end';setTimeout(()=>{if(arm==='end'){arm=null;render()}},3000)}else{arm=null;S.cur=null;sub=false;save()}}
  else if(a==='addp'){const n=pname.value.trim().slice(0,40),r=pnr.value.trim().slice(0,3);if(!n||!r){toast('Name und Nummer eingeben');return}op({k:'p+',p:{id:uid(),name:n,nr:r,role:cR(prole0.value)}})}
  else if(a==='delp'){if(arm!==v){arm=v;setTimeout(()=>{if(arm===v){arm=null;render()}},3000)}else{arm=null;op({k:'p-',id:v})}}
- else if(a==='resume'){S.cur=v;D=null;save()}
+ else if(a==='resume'){S.cur=v;D=null;catInit=true;const rs=S.sets.find(x=>x.id===v);if(rs)cat=replay(rs).srv==='us'?'srv':'rec';save()}
  else if(a==='cfg'){const u=cfgurl.value.trim();if(u&&!URLRE.test(u)){toast('Ungültige URL: erwartet https://script.google.com/.../exec');return}CFG={url:u,pw:cfgpw.value.trim().slice(0,100)};try{localStorage.setItem(CK,JSON.stringify(CFG))}catch(x){}sync()}
  else if(a==='syncnow')sync();
  else if(a==='pushall'){if(!CFG.url){toast('Erst URL speichern');return}pushAll()}
  else if(a==='orient'){ROT=!ROT;try{localStorage.setItem('vbrot',ROT?'1':'0')}catch(x){}view();toast(ROT?'Querformat: Handy quer halten':'Hochformat')}
+ else if(a==='install'&&DEFERRED){DEFERRED.prompt();DEFERRED=null}
  else if(a==='help')modal='help';
  else if(a==='gear')modal='set';
  else if(a==='gearx')modal=false;
