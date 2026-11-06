@@ -1,0 +1,25 @@
+name: Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests für Code.gs
+        run: node tests/gas.test.js
+      - name: Browser installieren
+        run: pip install playwright pillow && playwright install --with-deps chromium
+      - name: Tests für die App
+        run: python3 tests/app.test.py
+      - name: Tests für den Abgleich mit der Tabelle
+        run: python3 tests/sync.test.py
+      - name: Tests für App-Installation und Logo
+        run: python3 tests/pwa.test.py
+      - name: CSP-Hash aktuell?
+        run: python3 update_csp.py && git diff --exit-code index.html
