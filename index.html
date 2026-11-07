@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-x5c59oCa5hlZOPDFMCYkFVj2pNQglqsKD4R7q6g+BcM='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-9QKJKow1DJ61dMnooO5cuBlN6sZ0H6Ga01prD8XxD6A='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#17202a">
@@ -277,10 +277,12 @@ function helpHtml(){
  <p><b>⟳</b> schaltet zwischen Hoch- und Querformat um. <b>⚙</b> öffnet die Einstellungen: Google Tabelle, Daten als JSON sichern und zurückspielen, App sperren.</p>
  <p><b>Spiel oder Satz löschen:</b> In der Auswertung ganz unten im Kasten „Spiele und Sätze" steht neben jedem Spiel und jedem Satz ein Löschen-Knopf (zweimal tippen). Das löscht auch die Daten in der Google Tabelle und lässt sich nicht rückgängig machen. Taucht ein gelöschter Eintrag nach dem Abgleich wieder auf, ist das Google-Skript veraltet: Code.gs neu einfügen und mit „Neue Version" bereitstellen. Die App weist im Statusfeld darauf hin.</p>
  <p><b>Als App installieren:</b> Android: Chrome-Menü ⋮ → „App installieren". iPhone: Safari → Teilen → „Zum Home-Bildschirm". Auf dem iPhone hat die installierte App einen eigenen Speicher. Verbinde vorher die Google Tabelle oder sichere die Daten als JSON.</p>
+ <p><b>Gesicherter Stand:</b> Fehlen bei einem Abgleich Daten in der Tabelle, die dein Handy hat, sichert die App den Stand des Handys. Unter ⚙ → „Gesicherter Stand" kannst du ihn wiederherstellen und hochladen.</p>
  <p>Ohne Google Tabelle liegen die Daten nur auf diesem Gerät. Sichere sie dann regelmäßig über „Als JSON kopieren". Mit Tabelle sehen alle Geräte denselben Stand.</p></details></div>`;
 }
 function settings(){
- return ` <div class="card"><h2>Als App installieren</h2><div class="mu">Android (Chrome): Menü ⋮ → „App installieren“ oder der Knopf unten. iPhone (Safari): Teilen → „Zum Home-Bildschirm“. Danach startet die App mit eigenem Symbol und auch ohne Netz.</div>${DEFERRED?'<button class="pri" data-act="install">App installieren</button>':''}</div>
+ return ` ${bkHtml()}
+ <div class="card"><h2>Als App installieren</h2><div class="mu">Android (Chrome): Menü ⋮ → „App installieren“ oder der Knopf unten. iPhone (Safari): Teilen → „Zum Home-Bildschirm“. Danach startet die App mit eigenem Symbol und auch ohne Netz.</div>${DEFERRED?'<button class="pri" data-act="install">App installieren</button>':''}</div>
  <div class="card"><h2>Laptop-Modus</h2><label>Tastatursteuerung</label><select data-sel="lap"><option value="" ${!LAPPREF?'selected':''}>Automatisch (Laptop ohne Touch)</option><option value="1" ${LAPPREF==='1'?'selected':''}>Immer an</option><option value="0" ${LAPPREF==='0'?'selected':''}>Aus</option></select><div class="mu" style="margin-top:6px">Zählen nur mit der Tastatur: Bereich, Spieler, Bewertung 1 bis 5. Alle Tasten stehen in der Anleitung (?).</div></div>
  <div class="card"><h2>Logo</h2><div id="logost" class="mu">${esc(LOGO.msg)}</div></div>
  <div class="card"><h2>Google Tabelle</h2><label>Web-App-URL</label><input id="cfgurl" value="${esc(CFG.url)}" placeholder="https://script.google.com/macros/s/.../exec"><label>Passwort</label><input id="cfgpw" value="${esc(CFG.pw)}">
@@ -490,6 +492,32 @@ function queueAll(){
  save();
 }
 function pushAll(){queueAll();sync()}
+const BK='vbtracker-backup';
+function idsOfState(st){const m=new Map();st.players.forEach(p=>m.set('p'+p.id,''));st.games.forEach(g=>m.set('g'+g.id,''));st.sets.forEach(s=>{m.set('s'+s.id,s.gid);s.ev.forEach(e=>m.set('e'+e.id,s.id))});return m}
+function lostItems(old,cur,ops,dead){   // Daten, die dieses Gerät hatte, die nach dem Abgleich fehlen und nicht bewusst gelöscht wurden
+ const o=idsOfState(old),n=idsOfState(cur),mk=k=>new Set(ops.filter(x=>x.k===k).map(x=>x.id));
+ const dG=mk('g-'),dS=mk('s-'),dP=mk('p-'),dE=mk('e-');old.sets.forEach(s=>{if(dG.has(s.gid))dS.add(s.id)});
+ let nn=0,struct=0,ev=0;
+ o.forEach((par,key)=>{
+  if(n.has(key))return;const ty=key[0],id=key.slice(1);
+  if(dead.has(id)||(ty==='p'&&dP.has(id))||(ty==='g'&&dG.has(id))||(ty==='s'&&dS.has(id))||(ty==='e'&&(dE.has(id)||dS.has(par)||dead.has(par))))return;
+  nn++;if(ty==='e')ev++;else struct++;
+ });
+ return{n:nn,struct,ev};
+}
+function backupSave(old,n){
+ const st={players:old.players,games:old.games,sets:old.sets};
+ try{const prev=JSON.parse(localStorage.getItem(BK)||'null');if(prev&&JSON.stringify(prev.state).length>=JSON.stringify(st).length)return;localStorage.setItem(BK,JSON.stringify({t:Date.now(),n,state:st}))}catch(e){}
+}
+function bkRead(){try{return JSON.parse(localStorage.getItem(BK)||'null')}catch(e){return null}}
+function bkHtml(){
+ const b=bkRead();if(!b||!b.state)return '';
+ const c=cleanState(b.state);if(!c)return '';
+ const d=new Date(b.t||0).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}),ev=c.sets.reduce((a,s)=>a+s.ev.length,0);
+ return `<div class="card"><h2>Gesicherter Stand</h2><div class="mu">Beim Abgleich am ${esc(d)} fehlten in der Tabelle ${esc(b.n)} Datensätze, die dieses Handy hatte. Gesichert sind ${c.players.length} Spieler, ${c.sets.length} Sätze und ${ev} Eingaben.</div>
+ <button class="pri" data-act="restore" style="margin-top:8px">Wiederherstellen und hochladen</button>
+ <div class="row" style="margin-top:8px"><button data-act="bkexp" style="flex:1">Als JSON kopieren</button><button data-act="bkdrop" style="flex:1">Verwerfen</button></div></div>`;
+}
 const NEEDVER=5;let lastWarn='';   // Mindestversion des Google-Skripts (Code.gs)
 async function sync(){
  if(!CFG.url||busy||!UNL)return;
@@ -509,8 +537,11 @@ async function sync(){
   if(!(d.ver>=NEEDVER))warn='Das Google-Skript ist veraltet. Bitte Code.gs neu einfügen und mit neuer Version bereitstellen.';
   else if(d.skipped>0)warn=d.skipped+' Eingaben hat das Google-Skript nicht angenommen.';
   if(delIds.some(id=>nu.games.some(g=>g.id===id)||nu.sets.some(x=>x.id===id)))warn='Löschen wurde vom Google-Skript nicht ausgeführt. Bitte Code.gs neu einfügen und mit neuer Version bereitstellen.';
+  const old={players:S.players,games:S.games,sets:S.sets};
   S.players=nu.players;S.games=nu.games;S.sets=nu.sets;
   S.pend.forEach(applyOp);
+  const lost=lostItems(old,S,ops,new Set(Array.isArray(d.dead)?d.dead.filter(x=>typeof x==='string'):[]));
+  if(lost.n&&(lost.struct||lost.ev>=5)){backupSave(old,lost.n);toast('Achtung: '+lost.n+' Datensätze dieses Handys fehlten in der Tabelle. Der Stand ist gesichert (⚙ → Gesicherter Stand).')}
   if(S.cur&&!S.sets.some(s=>s.id===S.cur))S.cur=null;
   status=warn||'Synchronisiert '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
   if(warn&&warn!==lastWarn)toast(warn);lastWarn=warn;
@@ -565,6 +596,9 @@ document.addEventListener('click',e=>{
  else if(a==='syncnow')sync();
  else if(a==='pushall'){if(!CFG.url){toast('Erst URL speichern');return}pushAll()}
  else if(a==='orient'){ROT=!ROT;try{localStorage.setItem('vbrot',ROT?'1':'0')}catch(x){}view();toast(ROT?'Querformat: Handy quer halten':'Hochformat')}
+ else if(a==='restore'){const b=bkRead(),c=b&&cleanState(b.state);if(!c){toast('Kein gültiger Stand gesichert');return}S.players=c.players;S.games=c.games;S.sets=c.sets;S.cur=null;S.pend=[];CFG.init=false;try{localStorage.setItem(CK,JSON.stringify(CFG));localStorage.removeItem(BK)}catch(x){}mig();save();queueAll();toast('Wiederhergestellt, wird hochgeladen');sync()}
+ else if(a==='bkdrop'){try{localStorage.removeItem(BK)}catch(x){}}
+ else if(a==='bkexp'){const b=bkRead();if(!b)return;const tx=JSON.stringify(b.state);(navigator.clipboard?navigator.clipboard.writeText(tx):Promise.reject()).then(()=>toast('Kopiert'),()=>{imp.value=tx;imp.select();toast('Text markiert, bitte kopieren')});return}
  else if(a==='install'&&DEFERRED){DEFERRED.prompt();DEFERRED=null}
  else if(a==='help')modal='help';
  else if(a==='gear')modal='set';
