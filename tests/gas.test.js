@@ -3,32 +3,7 @@ const fs = require('fs'), vm = require('vm'), path = require('path'), assert = r
 const SRC = fs.readFileSync(path.join(__dirname, '..', 'Code.gs'), 'utf8');
 const PW = 'ein-langes-test-passwort';
 
-function makeEnv(source) {
-  class Sheet {
-    constructor(n) { this.name = n; this.rows = []; }
-    appendRow(r) { this.rows.push(r.slice()); } setFrozenRows() {} getMaxRows() { return this.rows.length + 100; }
-    getLastRow() { let n = this.rows.length; while (n > 0 && this.rows[n - 1].every(x => x === '' || x === undefined)) n--; return n; } getLastColumn() { return this.rows[0] ? this.rows[0].length : 0; } deleteRow(i) { this.rows.splice(i - 1, 1); }
-    getRange(r, c, nr = 1, nc = 1) {
-      const sh = this;
-      return { getValues: () => Array.from({ length: nr }, (_, i) => Array.from({ length: nc }, (_, j) => { const v = (sh.rows[r - 1 + i] || [])[c - 1 + j]; return v === undefined ? '' : v; })),
-        setValues(v) { v.forEach((row, i) => { sh.rows[r - 1 + i] = sh.rows[r - 1 + i] || []; row.forEach((x, j) => sh.rows[r - 1 + i][c - 1 + j] = x); }); },
-        setNumberFormat() { return this; }, setFontWeight() { return this; },
-        clearContent() { for (let i = 0; i < nr; i++) for (let jx = 0; jx < nc; jx++) if (sh.rows[r - 1 + i]) sh.rows[r - 1 + i][c - 1 + jx] = ''; } };
-    }
-    getDataRange() { return this.getRange(1, 1, this.getLastRow(), this.rows[0] ? this.rows[0].length : 1); }
-  }
-  const sheets = {}, cache = {};
-  const ctx = vm.createContext({
-    console: { error() {} },
-    SpreadsheetApp: { getActiveSpreadsheet: () => ({ getSheetByName: n => sheets[n] || null, insertSheet: n => (sheets[n] = new Sheet(n)) }) },
-    CacheService: { getScriptCache: () => ({ get: k => cache[k] || null, put: (k, v) => { cache[k] = v; } }) },
-    LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
-    ContentService: { MimeType: { JSON: 'json' }, createTextOutput: s => ({ s, setMimeType() { return this; }, getContent() { return this.s; } }) }
-  });
-  vm.runInContext(source, ctx);
-  const post = b => JSON.parse(ctx.doPost({ postData: { contents: typeof b === 'string' ? b : JSON.stringify(b) } }).getContent());
-  return { ctx, sheets, cache, post };
-}
+const { makeEnv } = require('./gas_mock');
 const good = () => makeEnv(SRC.replace("'bitte-aendern'", `'${PW}'`));
 const P = (id, name = 'Anna', nr = '7') => ({ k: 'p+', p: { id, name, nr } });
 const EV = (id, extra = {}) => ({ k: 'e+', sid: 's1', e: { id, p: 'p1', rot: 1, t: 5 }, x: { datum: '2026-01-01', gegner: 'X', satz: 1, spieler: 'Anna', nr: '7', bereich: 'Annahme', ergebnis: 'Perfekt', ...extra } });
@@ -145,7 +120,7 @@ t('Spiel loeschen entfernt Spiel, Saetze und Ereignisse, andere Spiele bleiben',
   e.post({ pw: PW, ops: [P('p1'), GM('g1'), GM('g2'), SET('s1', 'g1'), SET('s2', 'g1'), SET('s3', 'g2'), EV('e1'), { ...EV('e2'), sid: 's2' }, { ...EV('e3'), sid: 's3' }] });
   let r = e.post({ pw: PW, ops: [{ k: 'g-', id: 'g1' }] });
   assert.deepStrictEqual(r.games.map(x => x.id), ['g2']); assert.deepStrictEqual(r.sets.map(x => x.id), ['s3']); assert.deepStrictEqual(r.events.map(x => x.id), ['e3']);
-  r = e.post({ pw: PW, ops: [EV('e9'), { k: 'g-', id: 'gibtsnicht' }, { k: 'g-', id: '<x>' }] }); // danach weiter schreiben moeglich
+  r = e.post({ pw: PW, ops: [{ ...EV('e9'), sid: 's3' }, { k: 'g-', id: 'gibtsnicht' }, { k: 'g-', id: '<x>' }] }); // danach weiter schreiben moeglich
   assert.strictEqual(r.events.length, 2); assert.strictEqual(r.skipped, 1);
   assert.strictEqual(e.sheets.Ereignisse.getLastRow(), 3);
 });
@@ -164,6 +139,30 @@ t('Satz-Rollen werden gespeichert, geaendert und validiert', () => {
   assert.deepStrictEqual(r.sets[0].rl, { p1: 'LI' });
   r = e.post({ pw: PW, ops: [SET('s9', 'g1', { rl: { p1: '<b>' } }), SET('s8', 'g1', { rl: { '<x>': 'MB' } }), SET('s7', 'g1', { rl: 'x' })] });
   assert.strictEqual(r.skipped, 3); assert.strictEqual(r.sets.length, 1);
+});
+
+t('Gelöschtes bleibt gelöscht, auch wenn ein altes Gerät es erneut hochlädt', () => {
+  const e = good(), adds = [P('p1'), GM('g1'), SET('s1', 'g1'), EV('e1')];
+  e.post({ pw: PW, ops: adds });
+  let r = e.post({ pw: PW, ops: [{ k: 'g-', id: 'g1' }] });
+  assert.strictEqual(r.games.length + r.sets.length + r.events.length, 0);
+  r = e.post({ pw: PW, ops: adds.concat([GM('g1'), SET('s9', 'g1'), { ...EV('e9'), sid: 's1' }]) });      // altes Handy lädt alles wieder hoch
+  assert.deepStrictEqual([r.games.length, r.sets.length, r.events.length], [0, 0, 0], 'gelöschtes Spiel kam zurück');
+  assert.strictEqual(r.players.length, 1);                                                                 // der Spieler wurde nicht gelöscht
+  r = e.post({ pw: PW, ops: [GM('g2'), SET('s2', 'g2'), { ...EV('e2'), sid: 's2' }] });                      // Neues geht weiterhin
+  assert.deepStrictEqual([r.games.length, r.sets.length, r.events.length], [1, 1, 1]);
+});
+t('Gelöschter Satz, Spieler und zurückgenommene Eingabe kommen nicht wieder', () => {
+  const e = good(), s2ev = { ...EV('e2'), sid: 's2' };
+  e.post({ pw: PW, ops: [P('p1'), P('p2', 'B', '8'), GM('g1'), SET('s1'), SET('s2'), EV('e1'), s2ev, EV('e3')] });
+  let r = e.post({ pw: PW, ops: [{ k: 's-', id: 's2' }, { k: 'p-', id: 'p2' }, { k: 'e-', id: 'e3' }] });
+  assert.deepStrictEqual(r.sets.map(x => x.id), ['s1']); assert.deepStrictEqual(r.players.map(x => x.id), ['p1']); assert.deepStrictEqual(r.events.map(x => x.id), ['e1']);
+  r = e.post({ pw: PW, ops: [P('p2', 'B', '8'), SET('s2'), s2ev, EV('e3')] });
+  assert.deepStrictEqual(r.sets.map(x => x.id), ['s1']); assert.deepStrictEqual(r.players.map(x => x.id), ['p1']); assert.deepStrictEqual(r.events.map(x => x.id), ['e1']);
+});
+t('Antwort enthält die Versionsnummer, IDs wie "constructor" sind keine Grabsteine', () => {
+  const e = good(); let r = e.post({ pw: PW, ops: [P('constructor', 'X', '1'), P('toString', 'Y', '2')] });
+  assert(r.ver >= 5); assert.strictEqual(r.players.length, 2);
 });
 
 let fail = 0;
