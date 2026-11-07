@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tZgO5UtjKucc77ZDf9rIdPH0v/dUou69yun+ePXNNEA='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-x5c59oCa5hlZOPDFMCYkFVj2pNQglqsKD4R7q6g+BcM='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#17202a">
@@ -110,6 +110,7 @@ html.lap .gl{max-width:1150px}
 .cc .cp{font-size:10px;color:var(--mu)}.cc .cn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kk2{margin-right:3px;color:var(--ac)}
 .cc.on{color:var(--tx);border-color:var(--ac)}
 @media (min-width:1000px){html.lap .pr{grid-template-columns:210px 1fr}html.lap .pn{font-size:15px}}
+.mg{border-top:1px solid var(--bd);padding:8px 0}.ms{padding:4px 0 4px 12px;font-size:14px;gap:8px}.mgn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 14px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
 #toast.show{opacity:1}
 </style>
@@ -213,7 +214,7 @@ function game(s){
 }
 function players(){
  return `<div class="card"><h2>Spieler</h2>
- ${S.players.map(p=>`<div class="pl"><span>#${esc(p.nr)} ${esc(p.name)}</span><span class="row" style="flex-wrap:nowrap"><select data-sel="prole" data-v="${p.id}" style="width:auto;padding:8px">${roleOpts(p.role)}</select><button data-act="delp" data-v="${p.id}" class="${arm===p.id?'on':''}">${arm===p.id?'Sicher?':'Löschen'}</button></span></div>`).join('')||'<p class="mu">Noch keine Spieler.</p>'}
+ ${S.players.map((p,i)=>`<div class="pl"><span>${lapOn()&&i<PKEYS.length?`<kbd>${PKEYS[i].toUpperCase()}</kbd> `:''}#${esc(p.nr)} ${esc(p.name)}</span><span class="row" style="flex-wrap:nowrap"><select data-sel="prole" data-v="${p.id}" style="width:auto;padding:8px">${roleOpts(p.role)}</select><button data-act="delp" data-v="${p.id}" class="${arm===p.id?'on':''}">${arm===p.id?'Sicher?':'Löschen'}</button></span></div>`).join('')||'<p class="mu">Noch keine Spieler.</p>'}
  <label>Name</label><input id="pname" maxlength="40"><label>Rückennummer</label><input id="pnr" inputmode="numeric" maxlength="3"><label>Rolle</label><select id="prole0">${roleOpts('')}</select>
  <button class="pri" data-act="addp">Spieler hinzufügen</button></div>`;
 }
@@ -264,17 +265,17 @@ function helpHtml(){
  <details><summary>Laptop-Modus: Erfassen mit der Tastatur</summary>
  <p>Auf einem Laptop ohne Touch schaltet sich der Tastatur-Modus von selbst ein (oder unter ⚙ → Laptop-Modus). Die Hände bleiben dabei auf der Tastatur: <b>links Bereich und Bewertung, rechts der Spieler.</b> Auf jedem Feld stehen die Zifferntasten klein in der Ecke, in jeder Spielerzeile die Spielertaste.</p>
  <p><b>1. Bereich</b> (nur nötig, wenn die App nicht schon von selbst im richtigen Bereich ist): ${Object.entries(CATKEYS).map(([k,c])=>`<kbd>${k.toUpperCase()}</kbd> ${CATS[c].n}`).join(' · ')}. Die Reihenfolge entspricht den Reitern von links nach rechts.</p>
- <p><b>2. Spieler:</b> Die Tasten rechts bilden das Spielfeld nach. Oben <kbd>U</kbd> <kbd>I</kbd> <kbd>O</kbd> sind die Positionen 4, 3, 2 (vorn, von links nach rechts), darunter <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> die Positionen 5, 6, 1 (hinten). Bei der Rotation wandern die Spieler auf den Tasten mit. <kbd>N</kbd> und <kbd>M</kbd> sind für zusätzliche Spieler, zum Beispiel den Libero. Im Kasten links siehst du, wer auf welcher Taste liegt.</p>
+ <p><b>2. Spieler:</b> Jeder Spieler hat immer dieselbe Taste, unabhängig von Position, Rotation und Rolle. Die Tasten laufen in der Reihenfolge der Spielerliste (Reiter „Spieler") über die rechte Seite der Tastatur: ${PKEYS.map(k=>`<kbd>${k.toUpperCase()}</kbd>`).join(' ')}. Ein neuer Spieler bekommt die nächste freie Taste. Löschst du einen Spieler, rücken die folgenden Tasten nach. Die Taste steht in der Spielerliste, in jeder Zeile und im Kasten links. Mehr als ${PKEYS.length} Spieler bedienst du mit der Maus.</p>
  <p><b>3. Bewertung</b> mit den Ziffern, von links nach rechts wie die Felder. Fehler ist immer die <kbd>1</kbd>:</p>
  ${['rec','att','srv'].map(c=>`<p><b>${CATS[c].n}:</b> ${CATS[c].b.map(([r,l],i)=>`<kbd>${i+1}</kbd> ${l}`).join(' · ')}</p>`).join('')}
- <p>Beispiel: <kbd>W</kbd> <kbd>I</kbd> <kbd>4</kbd> ist Angriff, Spieler auf Position 3, Punkt. Beim Aufschlag brauchst du keinen Spieler: <kbd>E</kbd> <kbd>4</kbd> zählt ein Ass des aktuellen Aufschlägers.</p>
+ <p>Beispiel: <kbd>W</kbd> <kbd>I</kbd> <kbd>4</kbd> ist Angriff, Spieler mit der Taste I, Punkt. Beim Aufschlag brauchst du keinen Spieler: <kbd>E</kbd> <kbd>4</kbd> zählt ein Ass des aktuellen Aufschlägers.</p>
  <p>Weitere Tasten: <kbd>A</kbd> Punkt Gegner · <kbd>S</kbd> Gegnerfehler · <kbd>⌫</kbd> einen Schritt zurück (erst die Spielerauswahl, dann die letzte Eingabe) · <kbd>Strg</kbd>+<kbd>Z</kbd> Rückgängig · <kbd>D</kbd> Läufer weiterdrehen · <kbd>F</kbd> Spielstand korrigieren · <kbd>←</kbd> <kbd>→</kbd> Bereich wechseln · <kbd>Esc</kbd> Auswahl löschen · <kbd>?</kbd> diese Anleitung. Wechsel und alles Weitere gehen mit Maus oder Touchpad.</p></details>
  <details><summary>Zu zweit tracken</summary>
  <p>Mit der Google Tabelle können zwei Handys denselben Satz mitschreiben. Das zweite Handy öffnet den Reiter „Spiel", wählt das Spiel und tippt auf „Satz N fortsetzen". Neue Eingaben erscheinen auf dem anderen Handy bei der nächsten Eingabe, spätestens nach 30 Sekunden.</p>
  <p>Damit nichts doppelt gezählt wird und die Drehung nicht durcheinandergerät, teilt euch die Arbeit: Handy A zählt alles, was Punkte und Fehler entscheidet (Fehler, Punkt, Block, Ass, Punkt Gegner, Gegnerfehler). Handy B zählt nur die Bewertungen ohne Punkt: Annahme Schlecht, Ok und Perfekt, Angriff Recycle und Wirkung, Aufschlag Ohne Wirkung und Wirkung.</p></details>
  <details><summary>Weitere Funktionen</summary>
  <p><b>⟳</b> schaltet zwischen Hoch- und Querformat um. <b>⚙</b> öffnet die Einstellungen: Google Tabelle, Daten als JSON sichern und zurückspielen, App sperren.</p>
- <p><b>Spiel oder Satz löschen:</b> In der Auswertung oben das Spiel oder den Satz auswählen, dann erscheint ein Löschen-Knopf (zweimal tippen). Das löscht auch die Daten in der Google Tabelle und lässt sich nicht rückgängig machen.</p>
+ <p><b>Spiel oder Satz löschen:</b> In der Auswertung ganz unten im Kasten „Spiele und Sätze" steht neben jedem Spiel und jedem Satz ein Löschen-Knopf (zweimal tippen). Das löscht auch die Daten in der Google Tabelle und lässt sich nicht rückgängig machen. Taucht ein gelöschter Eintrag nach dem Abgleich wieder auf, ist das Google-Skript veraltet: Code.gs neu einfügen und mit „Neue Version" bereitstellen. Die App weist im Statusfeld darauf hin.</p>
  <p><b>Als App installieren:</b> Android: Chrome-Menü ⋮ → „App installieren". iPhone: Safari → Teilen → „Zum Home-Bildschirm". Auf dem iPhone hat die installierte App einen eigenen Speicher. Verbinde vorher die Google Tabelle oder sichere die Daten als JSON.</p>
  <p>Ohne Google Tabelle liegen die Daten nur auf diesem Gerät. Sichere sie dann regelmäßig über „Als JSON kopieren". Mit Tabelle sehen alle Geräte denselben Stand.</p></details></div>`;
 }
@@ -304,9 +305,9 @@ function erow(c,name,d,team){
 function evalv(){
  const sets=S.sets;
  let ev=[];sets.forEach(s=>{if(fSet==='all'||fSet==='s:'+s.id||fSet==='g:'+s.gid)ev=ev.concat(s.ev)});
- let h=`<div class="card"><h2>Auswertung</h2><select data-sel="fset"><option value="all">Alle Spiele</option>${S.games.slice().reverse().map(g=>`<optgroup label="${gname(g)}"><option value="g:${g.id}" ${fSet==='g:'+g.id?'selected':''}>Gesamtes Spiel</option>${sets.filter(s=>s.gid===g.id).map(s=>`<option value="s:${s.id}" ${fSet==='s:'+s.id?'selected':''}>Satz ${nrOf(s)}</option>`).join('')}</optgroup>`).join('')}</select>${fSet!=='all'?`<button data-act="delg" class="${arm==='delg'?'on':''}" style="margin-top:8px;width:100%">${arm==='delg'?'Wirklich löschen? Nicht rückgängig!':fSet[0]==='g'?'Dieses Spiel löschen':'Diesen Satz löschen'}</button>`:''}<div class="mu" style="margin-top:8px">Farben zeigen ab 3 Aktionen, ob ein Wert stark (grün), mittel (gelb) oder schwach (rot) ist.</div></div>`;
+ let h=`<div class="card"><h2>Auswertung</h2><select data-sel="fset"><option value="all">Alle Spiele</option>${S.games.slice().reverse().map(g=>`<optgroup label="${gname(g)}"><option value="g:${g.id}" ${fSet==='g:'+g.id?'selected':''}>Gesamtes Spiel</option>${sets.filter(s=>s.gid===g.id).map(s=>`<option value="s:${s.id}" ${fSet==='s:'+s.id?'selected':''}>Satz ${nrOf(s)}</option>`).join('')}</optgroup>`).join('')}</select><div class="mu" style="margin-top:8px">Farben zeigen ab 3 Aktionen, ob ein Wert stark (grün), mittel (gelb) oder schwach (rot) ist.</div></div>`;
  const ids=[...new Set(ev.map(e=>e.p))];
- if(!ids.length)return h+`<div class="card mu">Noch keine Daten.</div>`;
+ if(!ids.length)return h+`<div class="card mu">Noch keine Daten.</div>`+manageHtml();
  const cn=(c,r)=>ev.filter(e=>e.c===c&&e.r===r).length;
  const sw=Math.max(0,cn('sc','us')+cn('sc','wp')-cn('sc','wm')),sg=Math.max(0,cn('sc','opp')+cn('sc','gp')-cn('sc','gm'));
  const pu=cn('att','pt')+cn('att','blk')+cn('srv','ace')+cn('sc','oerr')+sw,po=cn('rec','err')+cn('att','err')+cn('srv','err')+sg;
@@ -324,7 +325,12 @@ function evalv(){
   const list=ids.map(id=>({id,d:calc(c,ev.filter(e=>e.p===id))})).filter(x=>x.d.tot).sort((x,y)=>y.d.key-x.d.key);
   h+=`<div class="card"><h2>${o.n}</h2><div class="leg">${o.b.map(([r,l,k])=>`<span><i class="${k}"></i>${l}</span>`).join('')}</div>${erow(c,'<b>Team</b>',team,1)}${list.map(x=>erow(c,pn(x.id),x.d)).join('')}</div>`;
  }
- return h;
+ return h+manageHtml();
+}
+function manageHtml(){
+ if(!S.games.length)return '';
+ const btn=(key,label)=>`<button data-act="del" data-v="${key}" class="${arm==='del:'+key?'on':''}" style="padding:6px 10px;font-size:13px;flex:none">${arm==='del:'+key?'Wirklich löschen?':label}</button>`;
+ return `<div class="card"><h2>Spiele und Sätze</h2><div class="mu" style="margin-bottom:6px">Hier löschst du Spiele und Sätze, zum Beispiel Testdaten. Zweimal tippen löscht endgültig, auch in der Google Tabelle.</div>${S.games.slice().reverse().map(g=>{const ss=S.sets.filter(s=>s.gid===g.id);return `<div class="mg"><div class="row sp" style="flex-wrap:nowrap"><b class="mgn">${gname(g)}</b>${btn('g:'+g.id,'Spiel löschen')}</div>${ss.map(s=>{const r=replay(s);return `<div class="row sp ms" style="flex-wrap:nowrap"><span>Satz ${nrOf(s)} · ${r.u} : ${r.o}${s.id===S.cur?' · läuft':''}</span>${btn('s:'+s.id,'Satz löschen')}</div>`}).join('')||'<div class="mu ms">Keine Sätze</div>'}</div>`}).join('')}</div>`;
 }
 function render(){
  {const c0=!catInit&&UNL?curSet():null;if(c0){catInit=true;cat=replay(c0).srv==='us'?'srv':'rec'}}
@@ -419,7 +425,7 @@ const LOGO={msg:'Logo wird gesucht ...'};
 })();
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
 const CATKEYS={q:'rec',w:'att',e:'srv'};
-const PLAYKEYS=[['u',3],['i',2],['o',1],['j',4],['k',5],['l',0]];   // Taste -> Index in der Aufstellung: oben U I O = Position 4 3 2 (vorn), unten J K L = Position 5 6 1 (hinten)
+const PKEYS=['u','i','o','p','j','k','l','ö','m',',','.'];   // feste Taste je Spieler, in der Reihenfolge der Spielerliste
 let LAPPREF=null;try{LAPPREF=localStorage.getItem('vblaptop')}catch(e){}
 const lapOn=()=>LAPPREF==='1'||(LAPPREF!=='0'&&navigator.maxTouchPoints===0&&matchMedia('(pointer:fine)').matches);
 const KB={sel:'',msg:'',tm:0};
@@ -427,21 +433,13 @@ function actSorted(s){
  const ro=p=>{const i=ROLES.findIndex(r=>r[0]===eRole(s,p));return i<0?9:i};
  return S.players.filter(p=>s.act.includes(p.id)).sort((a,b)=>ro(a)-ro(b)||(Number(a.nr)||0)-(Number(b.nr)||0)||a.name.localeCompare(b.name));
 }
-function kbMap(s){
- const pp=padPos(s.pos),rows=actSorted(s),m={};
- if(pp.some(Boolean)){PLAYKEYS.forEach(([k,i])=>{if(pp[i])m[k]=pp[i]});const ex=rows.filter(p=>!pp.includes(p.id));['n','m'].forEach((k,i)=>{if(ex[i])m[k]=ex[i].id})}
- else['u','i','o','j','k','l','n','m'].forEach((k,i)=>{if(rows[i])m[k]=rows[i].id});
- return m;
-}
-const kbRev=s=>{const r={},m=kbMap(s);Object.keys(m).forEach(k=>{r[m[k]]=k});return r};
+const kbRev=s=>{const r={};S.players.forEach((p,i)=>{if(i<PKEYS.length&&s.act.includes(p.id))r[p.id]=PKEYS[i]});return r};
 function kbMsg(m){KB.msg=m;clearTimeout(KB.tm);KB.tm=setTimeout(()=>{KB.msg='';const el=document.getElementById('kbmsg');if(el)el.textContent=''},4500)}
 function kbHtml(s){
- const m=kbMap(s),pp=padPos(s.pos),sel=KB.sel?S.players.find(p=>p.id===KB.sel):null;
- const cell=(k,l)=>{const p=m[k]?S.players.find(x=>x.id===m[k]):null;return `<div class="cc${p&&p.id===KB.sel?' on':''}"><span><kbd>${k.toUpperCase()}</kbd> <span class="cp">${l}</span></span><span class="cn">${p?`#${esc(p.nr)} ${esc(p.name)}`:'–'}</span></div>`};
- const court=pp.some(Boolean)?`<div class="mu" style="text-align:center;font-size:11px">Netz</div><div class="cgrid">${[['u','Pos. 4'],['i','Pos. 3'],['o','Pos. 2'],['j','Pos. 5'],['k','Pos. 6'],['l','Pos. 1']].map(([k,l])=>cell(k,l)).join('')}</div>`:`<div class="cgrid">${['u','i','o','j','k','l'].map(k=>cell(k,'')).join('')}</div>`;
- const extra=['n','m'].filter(k=>m[k]).map(k=>cell(k,'zusätzlich')).join('');
+ const sel=KB.sel?S.players.find(p=>p.id===KB.sel):null,rows=actSorted(s),rv=kbRev(s);
+ const cell=p=>`<div class="cc${p.id===KB.sel?' on':''}"><span class="cn">${rv[p.id]?`<kbd>${rv[p.id].toUpperCase()}</kbd>`:'<span class="mu">–</span>'} #${esc(p.nr)} ${esc(p.name)}</span>${eRole(s,p)?`<span class="rl ${eRole(s,p)}">${eRole(s,p)}</span>`:''}</div>`;
  return `<div class="card a-k kb"><div class="row sp" style="flex-wrap:nowrap"><span>Spieler: <b>${sel?`#${esc(sel.nr)} ${esc(sel.name)}`:'–'}</b></span><span id="kbmsg" class="mu kbmsg">${esc(KB.msg)}</span></div>
- ${court}${extra?`<div class="cgrid c2">${extra}</div>`:''}
+ <div class="cgrid c2">${rows.map(cell).join('')}</div>
  <div class="kbk"><b>Bereich:</b> ${Object.entries(CATKEYS).map(([k,c])=>`<kbd>${k.toUpperCase()}</kbd> ${CATS[c].n}`).join(' · ')}</div>
  <div class="kbk"><b>${CATS[cat].n}:</b> ${CATS[cat].b.map(([r,l],i)=>`<kbd>${i+1}</kbd> ${l}`).join(' · ')}</div>
  <div class="mu kbk"><kbd>A</kbd> Punkt Gegner · <kbd>S</kbd> Gegnerfehler · <kbd>⌫</kbd> zurück · <kbd>D</kbd> Läufer · <kbd>F</kbd> Korrektur · <kbd>?</kbd> Hilfe</div></div>`;
@@ -455,17 +453,17 @@ document.addEventListener('keydown',e=>{
  if(k==='?'){modal=modal==='help'?false:'help';render();e.preventDefault();return}
  if(k==='Escape'){if(modal){modal=false;render()}else if(KB.sel||fix||sub){KB.sel='';fix=false;sub=false;render()}return}
  const s=curSet();if(modal||tab!=='game'||!s)return;
- const m=kbMap(s);let ok=true;
+ let ok=true;
  if(meta){undo(s);kbMsg('Rückgängig')}
  else if(has(CATKEYS,k))cat=CATKEYS[k];
- else if(has(m,k)){KB.sel=m[k];const p=S.players.find(x=>x.id===KB.sel);kbMsg(p?'#'+p.nr+' '+p.name+' gewählt':'')}
+ else if(PKEYS.indexOf(k)>=0){const p=S.players[PKEYS.indexOf(k)];if(!p)kbMsg('Taste '+k.toUpperCase()+' ist keinem Spieler zugeordnet');else if(!s.act.includes(p.id))kbMsg('#'+p.nr+' '+p.name+' steht nicht auf dem Feld');else{KB.sel=p.id;kbMsg('#'+p.nr+' '+p.name+' gewählt')}}
  else if(/^[1-9]$/.test(k)){
   const c0=cat,list=CATS[c0].b,i=+k-1;
   if(i>=list.length)kbMsg(CATS[c0].n+' hat nur die Bewertungen 1 bis '+list.length);
   else{
    let p=KB.sel?S.players.find(x=>x.id===KB.sel):null;
    if(!p&&c0==='srv')p=S.players.find(x=>x.id===padPos(s.pos)[0]);
-   if(!p)kbMsg('Erst den Spieler wählen (U I O J K L)');
+   if(!p)kbMsg('Erst den Spieler wählen (seine Taste steht in der Zeile)');
    else{const r=list[i][0];addEv(s,{p:p.id,c:c0,r});kbMsg('✓ #'+p.nr+' '+p.name+' · '+lab(c0,r).join(' '));KB.sel=''}
   }
  }
@@ -492,6 +490,7 @@ function queueAll(){
  save();
 }
 function pushAll(){queueAll();sync()}
+const NEEDVER=5;let lastWarn='';   // Mindestversion des Google-Skripts (Code.gs)
 async function sync(){
  if(!CFG.url||busy||!UNL)return;
  if(!CFG.init&&(S.players.length||S.games.length||S.sets.length))queueAll();   // erste Verbindung: lokale Daten zuerst hochladen, nie von einer leeren Tabelle überschreiben lassen
@@ -501,14 +500,20 @@ async function sync(){
   const r=await fetch(CFG.url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({pw:CFG.pw,ops})});
   const d=await r.json();
   if(d.error)throw new Error(d.error);
+  const delIds=ops.filter(o=>o.k==='g-'||o.k==='s-').map(o=>o.id);
   S.pend=S.pend.slice(ops.length);
   const by=new Map();(Array.isArray(d.events)?d.events:[]).forEach(e=>{if(!e||typeof e!=='object')return;const[c,r]=code(e.bereich,e.ergebnis);if(!by.has(e.sid))by.set(e.sid,[]);by.get(e.sid).push({id:e.id,p:e.p,c,r,rot:e.rot,t:e.t})});
   const nu=cleanState({players:d.players,games:d.games,sets:(Array.isArray(d.sets)?d.sets:[]).map(s=>({...s,ev:((s&&by.get(s.id))||[]).sort((x,y)=>(Number(x.t)||0)-(Number(y.t)||0))}))});
   if(!nu)throw new Error('Ungültige Antwort');
+  let warn='';
+  if(!(d.ver>=NEEDVER))warn='Das Google-Skript ist veraltet. Bitte Code.gs neu einfügen und mit neuer Version bereitstellen.';
+  else if(d.skipped>0)warn=d.skipped+' Eingaben hat das Google-Skript nicht angenommen.';
+  if(delIds.some(id=>nu.games.some(g=>g.id===id)||nu.sets.some(x=>x.id===id)))warn='Löschen wurde vom Google-Skript nicht ausgeführt. Bitte Code.gs neu einfügen und mit neuer Version bereitstellen.';
   S.players=nu.players;S.games=nu.games;S.sets=nu.sets;
   S.pend.forEach(applyOp);
   if(S.cur&&!S.sets.some(s=>s.id===S.cur))S.cur=null;
-  status='Synchronisiert '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  status=warn||'Synchronisiert '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  if(warn&&warn!==lastWarn)toast(warn);lastWarn=warn;
   ok=true;save();
   if(!CFG.init){CFG.init=true;try{localStorage.setItem(CK,JSON.stringify(CFG))}catch(x){}}
  }catch(e){status=/fetch|network/i.test(e.message)?'Keine Verbindung zur Tabelle. Web-App-URL und Zugriff Jeder prüfen':'Fehler: '+e.message}
@@ -537,7 +542,7 @@ document.addEventListener('click',e=>{
  const a=b.dataset.act,v=b.dataset.v,s=curSet();
  if(lapOn()&&document.activeElement&&document.activeElement.blur)document.activeElement.blur();
  if(a==='unlock'){unlock();return}
- if(a!=='end'&&a!=='delp'&&a!=='delg')arm=null;
+ if(a!=='end'&&a!=='delp'&&a!=='del')arm=null;
  if(a==='tab')tab=v;
  else if(a==='serve')D.serve=v;
  else if(a==='rot')D.rot=+v;
@@ -546,7 +551,7 @@ document.addEventListener('click',e=>{
  else if(a==='cat')cat=v;
  else if(a==='wech'){sub=!sub;fix=false}
  else if(a==='fix'){fix=!fix;sub=false}
- else if(a==='delg'){if(arm!=='delg'){arm='delg';setTimeout(()=>{if(arm==='delg'){arm=null;render()}},4000)}else{arm=null;const id=fSet.slice(2);op({k:fSet[0]==='g'?'g-':'s-',id});fSet='all'}}
+ else if(a==='del'){const key='del:'+v;if(arm!==key){arm=key;setTimeout(()=>{if(arm===key){arm=null;render()}},4000)}else{arm=null;op({k:v[0]==='g'?'g-':'s-',id:v.slice(2)});fSet='all'}}
  else if(a==='tga'){const na=s.act.slice();tg(na,v);upd(s,{act:na})}
  else if(a==='rot+'){upd(s,{rot:nextRot(s.rot),pos:rotPos(s.pos||[])})}
  else if(a==='hit'){const[p,c,r]=v.split('|');addEv(s,{p,c,r});navigator.vibrate&&navigator.vibrate(15)}
