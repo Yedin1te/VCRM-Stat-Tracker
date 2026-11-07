@@ -11,16 +11,16 @@ def post(path, data=b'', port=None): return urllib.request.urlopen(urllib.reques
 def handler(route):
     if not ONLINE['on']: return route.abort()
     route.fulfill(status=200, content_type='application/json', headers={'access-control-allow-origin': '*'}, body=post('/', route.request.post_data.encode()))
-def device(br, st=None):
+def device(br, st=None, init=False):
     ctx = br.new_context(viewport={'width': 390, 'height': 800}, is_mobile=True, has_touch=True); pg = ctx.new_page(); pg.errs = []
     pg.on('pageerror', lambda e: pg.errs.append(str(e))); pg.route('https://script.google.com/**', handler)
-    open_app(pg, st, cfg={'url': URL, 'pw': SPW}); return pg
+    open_app(pg, st, cfg={'url': URL, 'pw': SPW, 'init': init}); return pg
 def do_sync(pg): pg.evaluate('sync()'); pg.wait_for_timeout(250)
 def snap(pg):
     d = json.loads(pg.evaluate('localStorage.getItem("vbtracker1")'))
     return {'players': sorted((p['id'], p['name'], p['nr'], p.get('role', '')) for p in d['players']),
             'games': sorted((g['id'], g['opp'], g['date']) for g in d['games']),
-            'sets': sorted((x['id'], x['gid'], x['serve'], x['rot'], tuple(x['pos']), tuple(sorted(x['act'])), tuple(sorted(x.get('rl', {}).items())),
+            'sets': sorted((x['id'], x['gid'], x['serve'], x['rot'], tuple(x.get('pos', [])), tuple(sorted(x['act'])), tuple(sorted(x.get('rl', {}).items())),
                             tuple(sorted((e['id'], e['p'], e['c'], e['r'], e['rot']) for e in x['ev']))) for x in d['sets'])}
 def run(name, fn, old=False):
     ONLINE['on'] = True; ONLINE['port'] = OLDPORT if old else PORT; post('/reset')
@@ -143,6 +143,41 @@ def t_newscript_ok(br):
     a.evaluate("op({k:'s-',id:'s2'})"); a.wait_for_timeout(1500); do_sync(a)
     st = a.evaluate("document.getElementById('st').textContent"); assert 'Synchronisiert' in st and 'nicht ausgeführt' not in st, st
 run('Sync: aktuelles Skript wird akzeptiert, keine Warnung beim Löschen', t_newscript_ok)
+
+def settings_text(pg):
+    pg.locator('nav [data-act=gear]').click(); pg.wait_for_timeout(300); return pg.locator('.md').inner_text()
+def has_bk(pg): return pg.evaluate("localStorage.getItem('vbtracker-backup')") is not None
+
+def t_backup(br):
+    b = device(br, state(players=7)); b.evaluate('pushAll()'); b.wait_for_timeout(900)           # die Tabelle kennt nur Spieler und ein Spiel
+    a = device(br, rich_state(), init=True); a.wait_for_timeout(1500)                            # Handy A hat deutlich mehr (wie nach einem fehlerhaften Abgleich)
+    bk = json.loads(a.evaluate("localStorage.getItem('vbtracker-backup')")); assert len(bk['state']['sets']) == 3 and bk['n'] >= 10, bk['n']
+    assert len(snap(a)['sets']) == 0, 'Handy wurde durch den Stand der Tabelle ersetzt'
+    txt = settings_text(a); assert 'Gesicherter Stand' in txt and '3 Sätze' in txt, txt
+    a.locator('[data-act=restore]').click(); a.wait_for_timeout(1800); do_sync(a)
+    assert not has_bk(a) and len(snap(a)['sets']) == 3, 'Wiederherstellen hat nicht funktioniert'
+    c = device(br); do_sync(c); assert snap(c) == snap(a), 'Tabelle enthält nach dem Wiederherstellen nicht alles'
+    assert sum(len(x[7]) for x in snap(c)['sets']) == sum(len(x['ev']) for x in rich_state()['sets'])
+run('Sync: Fehlen der Tabelle Daten des Handys, wird der Stand gesichert und lässt sich hochladen', t_backup)
+
+def t_nonoise(br):
+    a = device(br, rich_state()); a.evaluate('pushAll()'); a.wait_for_timeout(900); do_sync(a)
+    b = device(br); do_sync(b); do_sync(a)
+    b.evaluate("op({k:'e-',id:'x1'})"); b.wait_for_timeout(1500)                                 # B nimmt eine Eingabe zurück ...
+    b.evaluate("op({k:'g-',id:'g2'})"); b.wait_for_timeout(1500); do_sync(a)                      # ... und löscht ein ganzes Spiel
+    assert not has_bk(a), 'Sicherung nach bewusstem Löschen auf einem anderen Gerät (Fehlalarm)'
+    assert [x[0] for x in snap(a)['games']] == ['g1'] and 'x1' not in str(snap(a)['sets'])
+run('Sync: bewusstes Löschen und Zurücknehmen auf einem anderen Gerät löst keine Sicherung aus', t_nonoise)
+
+def t_procedure(br):
+    ONLINE['on'] = False
+    a = device(br, rich_state(), init=True); a.wait_for_timeout(500); local = snap(a)               # Handy mit Daten, Verbindung gerade gestört
+    tap(a, 'nav [data-act=gear]'); a.fill('#cfgurl', ''); tap(a, '[data-act=cfg]'); tap(a, '[data-act=gearx]')   # Schritt 1: Verbindung trennen
+    ONLINE['on'] = True; a.wait_for_timeout(1500); assert snap(a) == local, 'getrennt: Daten dürfen sich nicht ändern'
+    tap(a, 'nav [data-act=gear]'); a.fill('#cfgurl', URL); a.fill('#cfgpw', SPW); tap(a, '[data-act=cfg]'); a.wait_for_timeout(2000)   # Schritt 2: wieder verbinden
+    assert snap(a) == local and not has_bk(a), 'Handydaten nach dem Verbinden verändert'
+    b = device(br); do_sync(b); assert snap(b) == local, 'Tabelle hat nicht alle Handydaten bekommen'
+run('Sync: Trennen und neu Verbinden behält alle Handydaten und lädt sie in die Tabelle', t_procedure)
 
 if __name__ == '__main__':
     srv.terminate(); srv_old.terminate()

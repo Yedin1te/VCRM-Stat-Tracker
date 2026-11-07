@@ -165,6 +165,11 @@ t('Antwort enthält die Versionsnummer, IDs wie "constructor" sind keine Grabste
   assert(r.ver >= 5); assert.strictEqual(r.players.length, 2);
 });
 
+t('Antwort nennt die gelöschten IDs', () => {
+  const e = good(); e.post({ pw: PW, ops: [GM('g1'), SET('s1', 'g1')] });
+  const r = e.post({ pw: PW, ops: [{ k: 'g-', id: 'g1' }] }); assert(r.dead.includes('g1') && r.dead.includes('s1'), r.dead);
+});
+
 let fail = 0;
 for (const [n, f] of tests) { try { f(); console.log('PASS ' + n); } catch (err) { fail++; console.log('FAIL ' + n + '\n     -> ' + String(err.message).split('\n')[0]); } }
 console.log(`\n${tests.length - fail}/${tests.length} bestanden`); process.exit(fail ? 1 : 0);
