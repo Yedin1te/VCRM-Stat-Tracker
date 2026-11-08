@@ -129,13 +129,18 @@ def t_resurrect(br):
 run('Sync: Gelöschtes wird auch von einem alten Handy nicht wieder hochgeladen', t_resurrect)
 
 def t_oldscript(br):
-    a = device(br, rich_state()); a.evaluate('pushAll()'); a.wait_for_timeout(800); do_sync(a)
+    a = device(br, rich_state()); a.wait_for_timeout(1500); do_sync(a)                       # Handy mit Daten verbindet sich mit einem veralteten Skript
     st = a.evaluate("document.getElementById('st')?document.getElementById('st').textContent:''"); assert 'veraltet' in st, st
-    a.evaluate("op({k:'g-',id:'g1'})"); a.wait_for_timeout(1800)                      # automatischer Abgleich nach dem Löschen
-    st = a.evaluate("document.getElementById('st').textContent"); assert 'Löschen wurde vom Google-Skript nicht ausgeführt' in st, st
-    assert any(x[0] == 'g1' for x in snap(a)['games']), 'Server ist die Wahrheit: der Eintrag ist wieder da, die App warnt'
-    do_sync(a); st = a.evaluate("document.getElementById('st').textContent"); assert 'veraltet' in st, st      # Warnung bleibt bestehen
-run('Sync: veraltetes Google-Skript wird erkannt, Löschen meldet den Fehler deutlich', t_oldscript, old=True)
+    n0 = sum(len(x[7]) for x in snap(a)['sets']); assert n0 > 0 and len(snap(a)['sets']) == 3, 'Handydaten dürfen nicht ersetzt werden'
+    a.evaluate("addEv(S.sets[0],{p:'',c:'sc',r:'wp'})"); a.evaluate("op({k:'g-',id:'g2'})"); a.wait_for_timeout(1800); do_sync(a)       # Korrektur und Löschen mit altem Skript
+    sa = snap(a); assert sum(len(x[7]) for x in sa['sets'] if x[0] == 's1') == len(rich_state()['sets'][0]['ev']) + 1, 'Korrektur ging verloren'
+    assert [x[0] for x in sa['games']] == ['g1'] and a.evaluate('S.pend.length') > 0, 'Löschen oder Warteschlange verloren'
+    ONLINE['port'] = PORT; post('/reset')                                                    # jetzt: Skript aktualisiert (neue, leere Tabelle)
+    do_sync(a); do_sync(a); a.wait_for_timeout(400)
+    assert a.evaluate('S.pend.length') == 0 and 'Synchronisiert' in a.evaluate("document.getElementById('st').textContent")
+    b = device(br); do_sync(b); sb = snap(b); assert sb == snap(a), 'Tabelle hat nach dem Update nicht alles'
+    assert [x[0] for x in sb['games']] == ['g1'] and any(e[3] == 'wp' for x in sb['sets'] for e in x[7]), 'Löschen oder Korrektur fehlen in der neuen Tabelle'
+run('Sync: veraltetes Skript – Handy behält alles (auch Korrekturen), nach dem Update geht alles hoch', t_oldscript, old=True)
 
 def t_newscript_ok(br):
     a = device(br, rich_state()); a.evaluate('pushAll()'); a.wait_for_timeout(800); do_sync(a)
@@ -178,6 +183,18 @@ def t_procedure(br):
     assert snap(a) == local and not has_bk(a), 'Handydaten nach dem Verbinden verändert'
     b = device(br); do_sync(b); assert snap(b) == local, 'Tabelle hat nicht alle Handydaten bekommen'
 run('Sync: Trennen und neu Verbinden behält alle Handydaten und lädt sie in die Tabelle', t_procedure)
+
+def t_offline_fix(br):
+    a = device(br, rich_state()); a.evaluate('pushAll()'); a.wait_for_timeout(900); do_sync(a)
+    a.evaluate("S.cur='s1';render()")
+    standing = lambda pg: pg.evaluate("(()=>{const q=replay(S.sets.find(s=>s.id==='s1'));return[q.u,q.o,q.srv]})()")
+    s0 = standing(a); ONLINE['on'] = False
+    a.evaluate("addEv(curSet(),{p:'',c:'sc',r:'wp'});addEv(curSet(),{p:'',c:'sc',r:'wp'});addEv(curSet(),{p:'',c:'sc',r:'gm'})"); a.wait_for_timeout(1500); do_sync(a)
+    off = standing(a); assert off[0] == s0[0] + 2 and off[1] == max(0, s0[1] - 1), (s0, off)
+    ONLINE['on'] = True; do_sync(a); do_sync(a); a.wait_for_timeout(500)
+    assert standing(a) == off, ('Punktestand nach dem Wiederverbinden verändert', off, standing(a))
+    b = device(br); do_sync(b); assert standing(b) == off, 'Tabelle hat die Korrektur nicht'
+run('Sync: Korrektur ohne Netz bleibt nach dem Wiederverbinden erhalten (Handy und Tabelle)', t_offline_fix)
 
 if __name__ == '__main__':
     srv.terminate(); srv_old.terminate()

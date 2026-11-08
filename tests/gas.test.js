@@ -170,6 +170,24 @@ t('Antwort nennt die gelöschten IDs', () => {
   const r = e.post({ pw: PW, ops: [{ k: 'g-', id: 'g1' }] }); assert(r.dead.includes('g1') && r.dead.includes('s1'), r.dead);
 });
 
+t('Alte Beschriftungen (Ok, Recycle) werden angenommen und als Gut / Ohne Wirkung gespeichert', () => {
+  const e = good(); e.post({ pw: PW, ops: [P('p1')] });
+  const r = e.post({ pw: PW, ops: [EV('o1', { ergebnis: 'Ok' }), EV('o2', { bereich: 'Angriff', ergebnis: 'Recycle' }), EV('n1', { ergebnis: 'Gut' }), EV('n2', { bereich: 'Angriff', ergebnis: 'Ohne Wirkung' }), EV('bad', { ergebnis: 'Recycle' })] });
+  assert.strictEqual(r.skipped, 1, 'Recycle bei Annahme ist ungültig');
+  assert.deepStrictEqual(r.events.map(x => x.bereich + ':' + x.ergebnis), ['Annahme:Gut', 'Angriff:Ohne Wirkung', 'Annahme:Gut', 'Angriff:Ohne Wirkung']);
+});
+t('Bestehende Tabellenzeilen mit alten Beschriftungen werden einmalig umgestellt', () => {
+  const e = good(), sh = e.ctx.tab_('Ereignisse');
+  sh.appendRow(['x1', 's1', 'p1', '2026-01-01', 'G', '1', 'A', '1', 'Annahme', 'Ok', '1', '5']);
+  sh.appendRow(['x2', 's1', 'p1', '2026-01-01', 'G', '1', 'A', '1', 'Angriff', 'Recycle', '1', '6']);
+  sh.appendRow(['x3', 's1', 'p1', '2026-01-01', 'G', '1', 'A', '1', 'Angriff', 'Punkt', '1', '7']);
+  let r = e.post({ pw: PW, ops: [] });
+  assert.deepStrictEqual(r.events.map(x => x.ergebnis), ['Gut', 'Ohne Wirkung', 'Punkt']);
+  assert.deepStrictEqual(sh.rows.slice(1).map(x => x[9]), ['Gut', 'Ohne Wirkung', 'Punkt'], 'Tabelle selbst wurde nicht umgestellt');
+  r = e.post({ pw: PW, ops: [] }); assert.strictEqual(r.events.length, 3);
+});
+t('Versionsnummer ist 6', () => { assert.strictEqual(good().post({ pw: PW, ops: [] }).ver, 6); });
+
 let fail = 0;
 for (const [n, f] of tests) { try { f(); console.log('PASS ' + n); } catch (err) { fail++; console.log('FAIL ' + n + '\n     -> ' + String(err.message).split('\n')[0]); } }
 console.log(`\n${tests.length - fail}/${tests.length} bestanden`); process.exit(fail ? 1 : 0);
