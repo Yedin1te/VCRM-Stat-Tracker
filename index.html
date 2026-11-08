@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-8yeCP3zOrk0wTVqdH03RA2mOhZiXQL02zjFPukz4B9c='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-+p//YH9vRlQZ3G9gGAe6MdXvPmTZfUucHDmBTx++WEg='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#17202a">
@@ -111,6 +111,8 @@ html.lap .gl{max-width:1150px}
 .cc.on{color:var(--tx);border-color:var(--ac)}
 @media (min-width:1000px){html.lap .pr{grid-template-columns:210px 1fr}html.lap .pn{font-size:15px}}
 .mg{border-top:1px solid var(--bd);padding:8px 0}.ms{padding:4px 0 4px 12px;font-size:14px;gap:8px}.mgn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmb{display:grid;grid-template-columns:1fr 1fr;gap:2px;height:12px;margin-top:6px}.pml,.pmr{background:var(--bg);display:flex;height:100%}.pml{justify-content:flex-end;border-radius:6px 0 0 6px;overflow:hidden}.pmr{border-radius:0 6px 6px 0;overflow:hidden}.pml span{background:var(--b)}.pmr span{background:var(--g)}
+.md img{width:100%;border-radius:8px;border:1px solid var(--bd)}.dl{display:block;text-align:center;margin-top:8px;padding:12px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);text-decoration:none;font-weight:700}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 14px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
 #toast.show{opacity:1}
 </style>
@@ -261,6 +263,9 @@ function helpHtml(){
  <details><summary>Auswertung lesen</summary>
  <p>Oben wählst du, ob alle Spiele, ein ganzes Spiel oder ein einzelner Satz gezeigt wird. Die Karte „Punkte" zeigt, woher unsere Punkte kamen (Angriff, Block, Ass, Gegnerfehler, Sonstige), und die Satzergebnisse.</p>
  <p><b>Annahme:</b> Ø-Note und Anteil positiver Annahmen. <b>Angriff:</b> Punktquote und Fehlerquote, dazu die Zahl der Blockpunkte (die Quoten rechnen ohne Block). <b>Aufschlag:</b> Fehlerquote und „Wirkung+Ass", also der Anteil der Aufschläge, die Druck gemacht haben.</p>
+ <p><b>Plus/Minus:</b> Plus sind direkte Punkte (Angriff „Punkt", Block, Ass), Minus sind eigene Fehler (Annahme-, Angriffs- und Aufschlagfehler). Der Saldo ist Plus minus Minus, grün über 0 und rot darunter. Die Spieler sind nach Saldo sortiert.</p>
+ <p><b>Effizienz:</b> Angriff = (Punkte − Fehler) ÷ Angriffe, ohne Blocks. Grün ab 25 %, rot unter 5 %. Aufschlag = (Asse − Fehler) ÷ Aufschläge. Grün ab 0 %, rot unter −15 %. Annahme = Ø-Note in Prozent von 3. Grün ab 73 %, rot unter 50 %. Alle Farben erscheinen erst ab 3 Aktionen.</p>
+ <p><b>Als Bild teilen:</b> Der Knopf oben in der Auswertung erzeugt ein kompaktes Bild der gewählten Auswertung (Ergebnis, Teamwerte, Spielertabelle) und öffnet das Teilen-Menü deines Geräts, zum Beispiel für WhatsApp. Geht das nicht, erscheint das Bild zum Speichern.</p>
  <p>Die Balken zeigen die Verteilung. Die Farbe der Kennzahlen: grün stark, gelb mittel, rot schwach. Sie erscheint erst ab 3 Aktionen. Grün sind zum Beispiel Annahme-Ø ab 2,2, Angriffs-Punktquote ab 35 % und Fehlerquoten bis 10 %.</p></details>
  <details><summary>Laptop-Modus: Erfassen mit der Tastatur</summary>
  <p>Auf einem Laptop ohne Touch schaltet sich der Tastatur-Modus von selbst ein (oder unter ⚙ → Laptop-Modus). Die Hände bleiben dabei auf der Tastatur: <b>links Bereich und Bewertung, rechts der Spieler.</b> Auf jedem Feld stehen die Zifferntasten klein in der Ecke, in jeder Spielerzeile die Spielertaste.</p>
@@ -304,10 +309,85 @@ function erow(c,name,d,team){
  return `<div class="er ${team?'tm':''}"><div class="row sp" style="flex-wrap:nowrap"><span class="pn2">${name} <span class="mu">${d.tot}x</span></span><span class="row" style="gap:4px;flex-wrap:nowrap">${d.pills.map(([t,k])=>`<span class="pill ${k||''}">${t}</span>`).join('')}</span></div>
  <div class="bar">${CATS[c].b.map(([r,l,k],i)=>d.a[i]?`<span class="sg ${k}" style="flex:${d.a[i]}">${d.a[i]}</span>`:'').join('')}</div></div>`;
 }
+// ---------- Plus/Minus, Effizienz, Bild zum Teilen ----------
+const IMG={url:''};
+const sgn=n=>(n>0?'+':n<0?'−':'')+Math.abs(n);
+const pctS=v=>v===null?'–':(Math.round(v*100)+'%').replace('-','−');
+const grd=(v,n,g,b)=>n<3||v===null?'':v>=g?'g':v<b?'b':'w';
+function pm(ev,id){   // id=null: ganzes Team
+ const f=(c,r)=>ev.filter(e=>(id===null||e.p===id)&&e.c===c&&e.r===r).length;
+ const plus=f('att','pt')+f('att','blk')+f('srv','ace'),minus=f('rec','err')+f('att','err')+f('srv','err');
+ const aN=f('att','err')+f('att','rec')+f('att','eff')+f('att','pt'),sN=f('srv','err')+f('srv','none')+f('srv','eff')+f('srv','ace'),rN=f('rec','err')+f('rec','bad')+f('rec','ok')+f('rec','perf');
+ const rAvg=rN?(f('rec','bad')+2*f('rec','ok')+3*f('rec','perf'))/rN:null;
+ return{plus,minus,saldo:plus-minus,aN,sN,rN,blk:f('att','blk'),ace:f('srv','ace'),
+  aEff:aN?(f('att','pt')-f('att','err'))/aN:null,sEff:sN?(f('srv','ace')-f('srv','err'))/sN:null,
+  rAvg,rEff:rAvg===null?null:rAvg/3,rPos:rN?(f('rec','ok')+f('rec','perf'))/rN:null};
+}
+const pmGrades=d=>({s:d.plus+d.minus<2?'':d.saldo>0?'g':d.saldo<0?'b':'w',a:grd(d.aEff,d.aN,.25,.05),v:grd(d.sEff,d.sN,0,-.15),r:grd(d.rEff,d.rN,2.2/3,1.5/3)});
+function pmCard(ev,rows){
+ const T=pm(ev,null),mx=Math.max(1,...rows.map(x=>Math.max(x.d.plus,x.d.minus))),pill=(x,k)=>`<span class="pill ${k}">${x}</span>`;
+ const line=(name,d,m,team)=>{const g=pmGrades(d);return `<div class="er ${team?'tm':''}"><div class="row sp" style="flex-wrap:nowrap"><span class="pn2">${name}</span>${pill('Saldo '+sgn(d.saldo),g.s)}</div>
+  <div class="pmb"><div class="pml"><span style="width:${Math.round(100*d.minus/m)}%"></span></div><div class="pmr"><span style="width:${Math.round(100*d.plus/m)}%"></span></div></div>
+  <div class="row" style="gap:4px;margin-top:5px"><span class="mu" style="font-size:12px;margin-right:4px">+${d.plus} / −${d.minus}</span>${pill('Angriff '+pctS(d.aEff),g.a)}${pill('Aufschlag '+pctS(d.sEff),g.v)}${pill('Annahme '+pctS(d.rEff),g.r)}</div></div>`};
+ return `<div class="card"><h2>Plus/Minus und Effizienz</h2><div class="mu" style="margin-bottom:6px">Plus: direkte Punkte (Angriff, Block, Ass). Minus: eigene Fehler. Effizienz bei Angriff und Aufschlag: (Punkte − Fehler) ÷ Aktionen. Annahme: Ø-Note in Prozent von 3.</div>${line('<b>Team</b>',T,Math.max(1,T.plus,T.minus),true)}${rows.map(x=>line(pn(x.id),x.d,mx,false)).join('')}</div>`;
+}
+const imgHtml=()=>IMG.url?`<img src="${IMG.url}" alt="Auswertung"><a class="dl" href="${IMG.url}" download="volleyball-auswertung.png">Bild herunterladen</a><div class="mu" style="margin-top:6px">Am Handy: Bild gedrückt halten, dann speichern oder teilen.</div>`:'';
+async function makeReport(withLogo){
+ const sets=S.sets.filter(s=>fSet==='all'||fSet==='s:'+s.id||fSet==='g:'+s.gid);
+ let ev=[];sets.forEach(s=>{ev=ev.concat(s.ev)});
+ const ids=[...new Set(ev.map(e=>e.p).filter(Boolean))];
+ const rows=ids.map(id=>({p:S.players.find(p=>p.id===id)||{name:'?',nr:'',role:''},d:pm(ev,id)})).filter(x=>x.d.plus+x.d.minus+x.d.aN+x.d.sN+x.d.rN>0).sort((a,b)=>b.d.saldo-a.d.saldo||(Number(a.p.nr)||0)-(Number(b.p.nr)||0));
+ if(!rows.length)return null;
+ const T=pm(ev,null),one=fSet[0]==='s'?S.sets.find(s=>s.id===fSet.slice(2)):null,g=fSet[0]==='g'?S.games.find(x=>x.id===fSet.slice(2)):one?S.games.find(x=>x.id===one.gid):null;
+ const res=sets.map(s=>{const q=replay(s);return{n:nrOf(s),u:q.u,o:q.o}}),pu=res.reduce((a,x)=>a+x.u,0),po=res.reduce((a,x)=>a+x.o,0);
+ const W=1080,M=48,RH=66,H=520+rows.length*RH+130,cv=document.createElement('canvas');cv.width=W;cv.height=H;
+ const c=cv.getContext('2d'),F='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',CL={g:'#1f7a4d',w:'#b7791f',b:'#c0392b',n:'#2f5d8a','':'#9aa3ad'},RC={MB:'#2f5d8a',AA:'#1f7a4d',DI:'#a8571a',ZP:'#7b4fa3',LI:'#5b6770'};
+ const rr=(x,y,w,h,r,f)=>{c.beginPath();if(c.roundRect)c.roundRect(x,y,w,h,r);else c.rect(x,y,w,h);c.fillStyle=f;c.fill()};
+ const tx=(s,x,y,font,col,al)=>{c.font=font;c.fillStyle=col;c.textAlign=al||'left';c.textBaseline='middle';c.fillText(s,x,y)};
+ const fit=(s,w,font)=>{c.font=font;if(c.measureText(s).width<=w)return s;while(s.length>1&&c.measureText(s+'…').width>w)s=s.slice(0,-1);return s+'…'};
+ rr(0,0,W,H,0,'#ffffff');rr(0,0,W,236,0,'#17202a');
+ let drawn=false;
+ if(withLogo&&LOGO.url){const im=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=LOGO.url});if(im){const h=150,w=Math.min(300,im.naturalWidth*h/im.naturalHeight);c.drawImage(im,W-M-w,43,w,h);drawn=true}}
+ if(!drawn){const cx=W-M-75,cy=118;c.save();c.beginPath();c.arc(cx,cy,72,0,7);c.clip();c.fillStyle='#1f5fbf';c.fillRect(cx-72,cy-72,144,144);c.fillStyle='#f5c518';
+  c.beginPath();c.moveTo(cx-80,cy-30);c.bezierCurveTo(cx-40,cy-70,cx+10,cy-20,cx+80,cy-35);c.lineTo(cx+80,cy+5);c.bezierCurveTo(cx+30,cy+15,cx-10,cy-5,cx-80,cy+8);c.fill();
+  c.beginPath();c.moveTo(cx-40,cy+80);c.bezierCurveTo(cx-20,cy+30,cx+30,cy+30,cx+80,cy+60);c.lineTo(cx+80,cy+80);c.fill();c.restore();c.strokeStyle='#fff';c.lineWidth=4;c.beginPath();c.arc(cx,cy,72,0,7);c.stroke()}
+ tx(fit(g?g.opp:'Alle Spiele',680,'bold 62px '+F),M,92,'bold 62px '+F,'#ffffff');
+ tx((g?g.date.split('-').reverse().join('.')+' · '+(one?'Satz '+nrOf(one):'Gesamtes Spiel'):sets.length+(sets.length===1?' Satz':' Sätze')),M,150,'30px '+F,'#c9d1d9');
+ const sw=res.filter(x=>x.u>x.o).length,sl=res.filter(x=>x.u<x.o).length;
+ tx(fit(res.length>1?res.map(x=>'Satz '+x.n+'  '+x.u+':'+x.o).join('     '):one?pu+' : '+po:'',940,'bold 32px '+F),M,200,'bold 32px '+F,'#f5c518');
+ const kp=[['Punkte',pu+' : '+po,pu>po?'g':pu<po?'b':'w',res.length>1?sw+' : '+sl+' Sätze':'Wir : Gegner'],['Annahme positiv',pctS(T.rPos),grd(T.rPos,T.rN,.7,.5),T.rAvg===null?'':'Ø '+T.rAvg.toFixed(1)+' von 3'],['Angriff-Effizienz',pctS(T.aEff),grd(T.aEff,T.aN,.25,.05),T.aN+' Angriffe · '+T.blk+' Block'],['Aufschlag-Effizienz',pctS(T.sEff),grd(T.sEff,T.sN,0,-.15),T.ace+' Asse · '+T.sN+' Aufschl.']];
+ const bw=(W-2*M-3*16)/4;
+ kp.forEach((k,i)=>{const x=M+i*(bw+16);rr(x,264,bw,150,16,'#f3f1ec');tx(k[0],x+18,292,'600 22px '+F,'#5b6770');tx(k[1],x+18,345,'bold 54px '+F,CL[k[2]]);tx(fit(k[3],bw-30,'20px '+F),x+18,390,'20px '+F,'#5b6770')});
+ const hy=458;[['SPIELER',M,'left'],['PLUS / MINUS',440,'center'],['SALDO',630,'center'],['ANGRIFF',745,'center'],['AUFSCHLAG',860,'center'],['ANNAHME',975,'center']].forEach(h=>tx(h[0],h[1],hy,'600 17px '+F,'#8a94a0',h[2]));
+ const mx=Math.max(1,...rows.map(x=>Math.max(x.d.plus,x.d.minus)));
+ rows.forEach((r,i)=>{
+  const y=486+i*RH,my=y+RH/2,gr=pmGrades(r.d);
+  if(i%2===0)rr(M-16,y,W-2*M+32,RH,10,'#f7f6f2');
+  if(r.p.role){rr(M,my-15,46,30,6,RC[r.p.role]||'#5b6770');tx(r.p.role,M+23,my+1,'bold 18px '+F,'#fff','center')}
+  tx(fit('#'+r.p.nr+' '+r.p.name,r.p.role?190:240,'bold 28px '+F),M+(r.p.role?58:0),my,'bold 28px '+F,'#17202a');
+  const hw=84,mw=hw*r.d.minus/mx;rr(440-hw,my-11,hw*2,22,4,'#eceae4');if(mw>0)rr(440-mw,my-11,mw,22,4,'#c0392b');if(r.d.plus)rr(440,my-11,hw*r.d.plus/mx,22,4,'#1f7a4d');
+  tx(r.d.minus?'−'+r.d.minus:'',440-hw-8,my,'20px '+F,'#5b6770','right');tx(r.d.plus?'+'+r.d.plus:'',440+hw+8,my,'20px '+F,'#5b6770','left');
+  [[630,sgn(r.d.saldo),gr.s],[745,pctS(r.d.aEff),gr.a],[860,pctS(r.d.sEff),gr.v],[975,pctS(r.d.rEff),gr.r]].forEach(p=>{rr(p[0]-50,my-20,100,40,10,CL[p[2]]);tx(p[1],p[0],my+1,'bold 24px '+F,'#fff','center')});
+ });
+ const ly=486+rows.length*RH+22;
+ tx('Plus = direkte Punkte (Angriff, Block, Ass) · Minus = eigene Fehler · Saldo = Plus − Minus',M,ly,'20px '+F,'#8a94a0');
+ tx('Angriff/Aufschlag: (Punkte − Fehler) ÷ Aktionen · Annahme: Ø-Note in % von 3 · Farben ab 3 Aktionen',M,ly+30,'20px '+F,'#8a94a0');
+ tx('Volleyball Tracker · '+new Date().toLocaleDateString('de-DE'),M,H-30,'600 22px '+F,'#5b6770');
+ return cv;
+}
+async function shareImage(){
+ let cv=await makeReport(true).catch(()=>null),blob=null;
+ if(cv===null){toast('Keine Daten zum Teilen');return}
+ const tb=x=>new Promise((res,rej)=>{try{x.toBlob(b=>b?res(b):rej(new Error('leer')),'image/png')}catch(e){rej(e)}});
+ try{blob=await tb(cv)}catch(e){cv=await makeReport(false);blob=await tb(cv)}
+ const file=new File([blob],'volleyball-auswertung.png',{type:'image/png'});
+ if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'Volleyball Auswertung'});return}catch(e){if(e&&e.name==='AbortError')return}}
+ IMG.url=cv.toDataURL('image/png');modal='img';render();
+}
 function evalv(){
  const sets=S.sets;
  let ev=[];sets.forEach(s=>{if(fSet==='all'||fSet==='s:'+s.id||fSet==='g:'+s.gid)ev=ev.concat(s.ev)});
- let h=`<div class="card"><h2>Auswertung</h2><select data-sel="fset"><option value="all">Alle Spiele</option>${S.games.slice().reverse().map(g=>`<optgroup label="${gname(g)}"><option value="g:${g.id}" ${fSet==='g:'+g.id?'selected':''}>Gesamtes Spiel</option>${sets.filter(s=>s.gid===g.id).map(s=>`<option value="s:${s.id}" ${fSet==='s:'+s.id?'selected':''}>Satz ${nrOf(s)}</option>`).join('')}</optgroup>`).join('')}</select><div class="mu" style="margin-top:8px">Farben zeigen ab 3 Aktionen, ob ein Wert stark (grün), mittel (gelb) oder schwach (rot) ist.</div></div>`;
+ let h=`<div class="card"><h2>Auswertung</h2><select data-sel="fset"><option value="all">Alle Spiele</option>${S.games.slice().reverse().map(g=>`<optgroup label="${gname(g)}"><option value="g:${g.id}" ${fSet==='g:'+g.id?'selected':''}>Gesamtes Spiel</option>${sets.filter(s=>s.gid===g.id).map(s=>`<option value="s:${s.id}" ${fSet==='s:'+s.id?'selected':''}>Satz ${nrOf(s)}</option>`).join('')}</optgroup>`).join('')}</select><button class="pri" data-act="shareimg" style="margin-top:10px">Als Bild teilen</button><div class="mu" style="margin-top:8px">Farben zeigen ab 3 Aktionen, ob ein Wert stark (grün), mittel (gelb) oder schwach (rot) ist.</div></div>`;
  const ids=[...new Set(ev.map(e=>e.p))];
  if(!ids.length)return h+`<div class="card mu">Noch keine Daten.</div>`+manageHtml();
  const cn=(c,r)=>ev.filter(e=>e.c===c&&e.r===r).length;
@@ -321,6 +401,8 @@ function evalv(){
   <div class="st"><b>Gegner:</b> Annahmefehler ${cn('rec','err')} · Angriffsfehler ${cn('att','err')} · Aufschlagfehler ${cn('srv','err')} · Sonstige ${sg}</div>
   ${fs.map(s=>{const r=replay(s);return `<div class="st"><b>${esc(s.opp)}, Satz ${nrOf(s)}</b> <span class="mu">${s.date.split('-').reverse().join('.')}</span><b class="num" style="float:right">${r.u} : ${r.o}</b></div>`}).join('')}</div>`;
  }
+ {const rowsPM=ids.filter(Boolean).map(id=>({id,d:pm(ev,id)})).filter(x=>x.d.plus+x.d.minus+x.d.aN+x.d.sN+x.d.rN>0).sort((a,b)=>b.d.saldo-a.d.saldo||(Number((S.players.find(p=>p.id===a.id)||{}).nr)||0)-(Number((S.players.find(p=>p.id===b.id)||{}).nr)||0));
+  if(rowsPM.length)h+=pmCard(ev,rowsPM)}
  for(const c of ['rec','att','srv']){
   const o=CATS[c],team=calc(c,ev);
   if(!team.tot)continue;
@@ -338,7 +420,7 @@ function render(){
  {const c0=!catInit&&UNL?curSet():null;if(c0){catInit=true;cat=replay(c0).srv==='us'?'srv':'rec'}}
  if(!UNL){nav.innerHTML='';app.innerHTML=`<div class="card" style="margin-top:18vh"><h2>Volleyball Tracker</h2><label>PIN</label><input id="pin" type="password" autocapitalize="off" autocomplete="off" autocorrect="off"><button class="pri" data-act="unlock">Öffnen</button></div>`;return}
  const cur=curSet();
- app.innerHTML=(CFG.url?`<div id="st" class="mu" style="font-size:12px;text-align:right;margin-bottom:4px">${esc(stTxt())}</div>`:'')+(tab==='game'?(cur?game(cur):setup()):tab==='pl'?players():evalv())+(modal?`<div id="ov" class="ov"><div class="md"><div class="row sp"><h2>${modal==='help'?'Anleitung':'Einstellungen'}</h2><button data-act="gearx">Schließen</button></div>${modal==='help'?helpHtml():settings()}</div></div>`:'');
+ app.innerHTML=(CFG.url?`<div id="st" class="mu" style="font-size:12px;text-align:right;margin-bottom:4px">${esc(stTxt())}</div>`:'')+(tab==='game'?(cur?game(cur):setup()):tab==='pl'?players():evalv())+(modal?`<div id="ov" class="ov"><div class="md"><div class="row sp"><h2>${modal==='help'?'Anleitung':modal==='img'?'Bild zum Teilen':'Einstellungen'}</h2><button data-act="gearx">Schließen</button></div>${modal==='help'?helpHtml():modal==='img'?imgHtml():settings()}</div></div>`:'');
  nav.innerHTML=[['pl','Spieler'],['game','Spiel'],['eval','Auswertung']].map(([k,l])=>`<button data-act="tab" data-v="${k}" class="${tab===k?'on':''}">${l}</button>`).join('')+`<button data-act="help" aria-label="Anleitung" style="flex:0 0 34px;font-size:16px;font-weight:700">?</button><button data-act="orient" aria-label="Quer- oder Hochformat" class="${ROT?'on':''}" style="flex:0 0 38px;font-size:20px">⟳</button><button data-act="gear" aria-label="Einstellungen" style="flex:0 0 38px;font-size:20px">⚙</button>`;
 }
 const CK='vbcfg1',URLRE=/^https:\/\/script\.google\.com\/(a\/macros\/[A-Za-z0-9._-]+|macros)\/s\/[A-Za-z0-9_-]{20,}\/exec$/;let CFG={url:'',pw:''},busy=false,tmr=null,status='';
@@ -421,7 +503,7 @@ const LOGO={msg:'Logo wird gesucht ...'};
  const next=()=>{
   if(i>=names.length){LOGO.msg='Kein Logo gefunden. Gesucht wurde zum Beispiel unter '+base+'logo.png. Lege die Datei logo.png ins Hauptverzeichnis, direkt neben index.html.';say();return}
   const n=names[i++],img=new Image();
-  img.onload=()=>{document.documentElement.style.setProperty('--logo','url("'+base+n+'")');LOGO.msg='Logo gefunden: '+n+' ('+img.naturalWidth+' x '+img.naturalHeight+' Pixel)';say()};
+  img.onload=()=>{LOGO.url=base+n;document.documentElement.style.setProperty('--logo','url("'+base+n+'")');LOGO.msg='Logo gefunden: '+n+' ('+img.naturalWidth+' x '+img.naturalHeight+' Pixel)';say()};
   img.onerror=next;img.src=base+n;
  };
  next();
@@ -603,6 +685,7 @@ document.addEventListener('click',e=>{
  else if(a==='restore'){const b=bkRead(),c=b&&cleanState(b.state);if(!c){toast('Kein gültiger Stand gesichert');return}S.players=c.players;S.games=c.games;S.sets=c.sets;S.cur=null;S.pend=[];CFG.init=false;QUEUED=true;try{localStorage.setItem(CK,JSON.stringify(CFG));localStorage.removeItem(BK)}catch(x){}mig();save();queueAll();toast('Wiederhergestellt, wird hochgeladen');sync()}
  else if(a==='bkdrop'){try{localStorage.removeItem(BK)}catch(x){}}
  else if(a==='bkexp'){const b=bkRead();if(!b)return;const tx=JSON.stringify(b.state);(navigator.clipboard?navigator.clipboard.writeText(tx):Promise.reject()).then(()=>toast('Kopiert'),()=>{imp.value=tx;imp.select();toast('Text markiert, bitte kopieren')});return}
+ else if(a==='shareimg'){shareImage();return}
  else if(a==='install'&&DEFERRED){DEFERRED.prompt();DEFERRED=null}
  else if(a==='help')modal='help';
  else if(a==='gear')modal='set';
