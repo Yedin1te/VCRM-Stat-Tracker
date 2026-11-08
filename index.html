@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-9QKJKow1DJ61dMnooO5cuBlN6sZ0H6Ga01prD8XxD6A='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-8yeCP3zOrk0wTVqdH03RA2mOhZiXQL02zjFPukz4B9c='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#17202a">
@@ -167,8 +167,8 @@ const gname=g=>`${g.date.split('-').reverse().join('.')} gegen ${esc(g.opp)}`;
 const nrOf=s=>S.sets.filter(x=>x.gid===s.gid).indexOf(s)+1;
 const lastAct=gid=>{const l=S.sets.filter(s=>s.gid===gid).pop();return l?l.act.slice():[]};
 const CATS={
- rec:{n:'Annahme',b:[['err','Fehler','b'],['bad','Schlecht','w'],['ok','Ok','n'],['perf','Perfekt','g']]},
- att:{n:'Angriff',b:[['err','Fehler','b'],['rec','Recycle','w'],['eff','Wirkung','n'],['pt','Punkt','g'],['blk','Block','g']]},
+ rec:{n:'Annahme',b:[['err','Fehler','b'],['bad','Schlecht','w'],['ok','Gut','n'],['perf','Perfekt','g']]},
+ att:{n:'Angriff',b:[['err','Fehler','b'],['rec','Ohne Wirkung','w'],['eff','Wirkung','n'],['pt','Punkt','g'],['blk','Block','g']]},
  srv:{n:'Aufschlag',b:[['err','Fehler','b'],['none','Ohne Wirkung','w'],['eff','Wirkung','n'],['ace','Ass','g']]},
  sc:{n:'Spielstand',b:[['opp','Punkt Gegner','b'],['oerr','Gegnerfehler','n'],['us','Punkt wir','g'],['wp','Korrektur wir +1','n'],['wm','Korrektur wir -1','n'],['gp','Korrektur Gegner +1','n'],['gm','Korrektur Gegner -1','n'],['sv','Aufschlag tauschen','n']]}};
 try{const c=cleanState(JSON.parse(RAW));if(c)S=c}catch(e){}
@@ -232,12 +232,12 @@ function helpHtml(){
  <p class="mu">Bewertet die erste Ballberührung nach dem gegnerischen Aufschlag danach, wie gut der Zuspieler danach arbeiten kann.</p>
  ${D(P('b','Fehler'),'Annahme direkt verloren: Ball im Aus, im Netz, auf dem Boden oder nicht spielbar. Punkt für den Gegner, wird automatisch gezählt. Note 0.')}
  ${D(P('w','Schlecht'),'Der Ball ist gespielt, aber das Zuspiel nur eine Notlösung: Zuspieler weit weg vom Ziel, keine echte Angriffsoption oder der Ball muss direkt zurück. Note 1.')}
- ${D(P('n','Ok'),'Zuspiel gut möglich, aber nicht genau: Der Zuspieler muss sich bewegen oder es gibt nur eingeschränkte Angriffsoptionen, zum Beispiel ohne Mitte. Note 2.')}
+ ${D(P('n','Gut'),'Zuspiel gut möglich, aber nicht genau: Der Zuspieler muss sich bewegen oder es gibt nur eingeschränkte Angriffsoptionen, zum Beispiel ohne Mitte. Note 2.')}
  ${D(P('g','Perfekt'),'Der Ball kommt genau zum Zuspieler, alle Angriffsoptionen sind möglich. Note 3.')}
- <p class="mu">„Positiv" in der Auswertung heißt Ok plus Perfekt. Das Ø ist die Durchschnittsnote von 0 bis 3.</p></details>
+ <p class="mu">„Positiv" in der Auswertung heißt Gut plus Perfekt. Das Ø ist die Durchschnittsnote von 0 bis 3.</p></details>
  <details><summary>Angriff: die fünf Felder</summary>
  ${D(P('b','Fehler'),'Ball im Netz, im Aus oder direkt geblockt. Punkt für den Gegner, wird automatisch gezählt.')}
- ${D(P('w','Recycle'),'Der Gegner wehrt den Ball ab oder nimmt ihn problemlos auf, der Ballwechsel läuft normal weiter. Der Angriff hatte keine Wirkung.')}
+ ${D(P('w','Ohne Wirkung'),'Der Gegner wehrt den Ball ab oder nimmt ihn problemlos auf, der Ballwechsel läuft normal weiter. Der Angriff hatte keine Wirkung.')}
  ${D(P('n','Wirkung'),'Der Angriff bringt den Gegner in Not: Er kann nur eine Notlösung oder einen Freeball spielen. Es ist aber noch kein direkter Punkt.')}
  ${D(P('g','Punkt'),'Direkter Punkt für uns durch den Angriff, wird automatisch gezählt.')}
  ${D(P('g','Block'),'Direkter Blockpunkt des Spielers, wird automatisch als Punkt für uns gezählt. In der Auswertung steht er getrennt von der Angriffsquote.')}</details>
@@ -272,7 +272,7 @@ function helpHtml(){
  <p>Weitere Tasten: <kbd>A</kbd> Punkt Gegner · <kbd>S</kbd> Gegnerfehler · <kbd>⌫</kbd> einen Schritt zurück (erst die Spielerauswahl, dann die letzte Eingabe) · <kbd>Strg</kbd>+<kbd>Z</kbd> Rückgängig · <kbd>D</kbd> Läufer weiterdrehen · <kbd>F</kbd> Spielstand korrigieren · <kbd>←</kbd> <kbd>→</kbd> Bereich wechseln · <kbd>Esc</kbd> Auswahl löschen · <kbd>?</kbd> diese Anleitung. Wechsel und alles Weitere gehen mit Maus oder Touchpad.</p></details>
  <details><summary>Zu zweit tracken</summary>
  <p>Mit der Google Tabelle können zwei Handys denselben Satz mitschreiben. Das zweite Handy öffnet den Reiter „Spiel", wählt das Spiel und tippt auf „Satz N fortsetzen". Neue Eingaben erscheinen auf dem anderen Handy bei der nächsten Eingabe, spätestens nach 30 Sekunden.</p>
- <p>Damit nichts doppelt gezählt wird und die Drehung nicht durcheinandergerät, teilt euch die Arbeit: Handy A zählt alles, was Punkte und Fehler entscheidet (Fehler, Punkt, Block, Ass, Punkt Gegner, Gegnerfehler). Handy B zählt nur die Bewertungen ohne Punkt: Annahme Schlecht, Ok und Perfekt, Angriff Recycle und Wirkung, Aufschlag Ohne Wirkung und Wirkung.</p></details>
+ <p>Damit nichts doppelt gezählt wird und die Drehung nicht durcheinandergerät, teilt euch die Arbeit: Handy A zählt alles, was Punkte und Fehler entscheidet (Fehler, Punkt, Block, Ass, Punkt Gegner, Gegnerfehler). Handy B zählt nur die Bewertungen ohne Punkt: Annahme Schlecht, Gut und Perfekt, Angriff Ohne Wirkung und Wirkung, Aufschlag Ohne Wirkung und Wirkung.</p></details>
  <details><summary>Weitere Funktionen</summary>
  <p><b>⟳</b> schaltet zwischen Hoch- und Querformat um. <b>⚙</b> öffnet die Einstellungen: Google Tabelle, Daten als JSON sichern und zurückspielen, App sperren.</p>
  <p><b>Spiel oder Satz löschen:</b> In der Auswertung ganz unten im Kasten „Spiele und Sätze" steht neben jedem Spiel und jedem Satz ein Löschen-Knopf (zweimal tippen). Das löscht auch die Daten in der Google Tabelle und lässt sich nicht rückgängig machen. Taucht ein gelöschter Eintrag nach dem Abgleich wieder auf, ist das Google-Skript veraltet: Code.gs neu einfügen und mit „Neue Version" bereitstellen. Die App weist im Statusfeld darauf hin.</p>
@@ -361,7 +361,8 @@ function applyOp(o){
 }
 function op(o){applyOp(o);S.pend.push(o);save();ui();if(CFG.url){clearTimeout(tmr);tmr=setTimeout(sync,700)}}
 const lab=(c,r)=>[CATS[c].n,CATS[c].b.find(x=>x[0]===r)[1]];
-const code=(bn,rn)=>{for(const[c,o]of Object.entries(CATS))if(o.n===bn){const x=o.b.find(x=>x[1]===rn);if(x)return[c,x[0]]}return[bn,rn]};
+const LEG={Annahme:{Ok:'Gut'},Angriff:{Recycle:'Ohne Wirkung'}};   // frühere Beschriftungen in alten Tabellenzeilen
+const code=(bn,rn)=>{if(has(LEG,bn)&&has(LEG[bn],rn))rn=LEG[bn][rn];for(const[c,o]of Object.entries(CATS))if(o.n===bn){const x=o.b.find(x=>x[1]===rn);if(x)return[c,x[0]]}return[bn,rn]};
 function evOp(s,e){const p=S.players.find(p=>p.id===e.p)||{name:e.p?'?':'',nr:''},[bn,rn]=lab(e.c,e.r);return{k:'e+',sid:s.id,e:{id:e.id,p:e.p,c:e.c,r:e.r,rot:e.rot,t:e.t},x:{datum:s.date,gegner:s.opp,satz:nrOf(s),spieler:p.name,nr:p.nr,bereich:bn,ergebnis:rn}}}
 const PT={rec:{err:'o'},att:{err:'o',pt:'u',blk:'u'},srv:{err:'o',ace:'u'},sc:{opp:'o',oerr:'u',us:'u'}};
 const ptOf=(c,r)=>has(PT,c)&&has(PT[c],r)?PT[c][r]:null;
@@ -518,24 +519,27 @@ function bkHtml(){
  <button class="pri" data-act="restore" style="margin-top:8px">Wiederherstellen und hochladen</button>
  <div class="row" style="margin-top:8px"><button data-act="bkexp" style="flex:1">Als JSON kopieren</button><button data-act="bkdrop" style="flex:1">Verwerfen</button></div></div>`;
 }
-const NEEDVER=5;let lastWarn='';   // Mindestversion des Google-Skripts (Code.gs)
+const NEEDVER=6;let lastWarn='',QUEUED=false;   // Mindestversion des Google-Skripts (Code.gs)
 async function sync(){
  if(!CFG.url||busy||!UNL)return;
- if(!CFG.init&&(S.players.length||S.games.length||S.sets.length))queueAll();   // erste Verbindung: lokale Daten zuerst hochladen, nie von einer leeren Tabelle überschreiben lassen
+ if(!CFG.init&&!QUEUED&&(S.players.length||S.games.length||S.sets.length)){queueAll();QUEUED=true}   // erste Verbindung: lokale Daten zuerst hochladen, nie von einer leeren Tabelle überschreiben lassen
  busy=true;status='Synchronisiere...';ui();
  const ops=S.pend.slice();let ok=false;
  try{
   const r=await fetch(CFG.url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({pw:CFG.pw,ops})});
   const d=await r.json();
   if(d.error)throw new Error(d.error);
+  if(!(d.ver>=NEEDVER)){   // veraltetes Skript: Stand der Tabelle NICHT übernehmen, alle Eingaben bleiben gespeichert und gehen nach dem Update hoch
+   const m='Das Google-Skript ist veraltet. Bitte Code.gs neu einfügen und neu bereitstellen. Deine Eingaben bleiben auf diesem Handy gespeichert.';
+   if(m!==lastWarn)toast(m);lastWarn=m;throw new Error(m);
+  }
   const delIds=ops.filter(o=>o.k==='g-'||o.k==='s-').map(o=>o.id);
   S.pend=S.pend.slice(ops.length);
   const by=new Map();(Array.isArray(d.events)?d.events:[]).forEach(e=>{if(!e||typeof e!=='object')return;const[c,r]=code(e.bereich,e.ergebnis);if(!by.has(e.sid))by.set(e.sid,[]);by.get(e.sid).push({id:e.id,p:e.p,c,r,rot:e.rot,t:e.t})});
   const nu=cleanState({players:d.players,games:d.games,sets:(Array.isArray(d.sets)?d.sets:[]).map(s=>({...s,ev:((s&&by.get(s.id))||[]).sort((x,y)=>(Number(x.t)||0)-(Number(y.t)||0))}))});
   if(!nu)throw new Error('Ungültige Antwort');
   let warn='';
-  if(!(d.ver>=NEEDVER))warn='Das Google-Skript ist veraltet. Bitte Code.gs neu einfügen und mit neuer Version bereitstellen.';
-  else if(d.skipped>0)warn=d.skipped+' Eingaben hat das Google-Skript nicht angenommen.';
+  if(d.skipped>0)warn=d.skipped+' Eingaben hat das Google-Skript nicht angenommen.';
   if(delIds.some(id=>nu.games.some(g=>g.id===id)||nu.sets.some(x=>x.id===id)))warn='Löschen wurde vom Google-Skript nicht ausgeführt. Bitte Code.gs neu einfügen und mit neuer Version bereitstellen.';
   const old={players:S.players,games:S.games,sets:S.sets};
   S.players=nu.players;S.games=nu.games;S.sets=nu.sets;
@@ -592,11 +596,11 @@ document.addEventListener('click',e=>{
  else if(a==='addp'){const n=pname.value.trim().slice(0,40),r=pnr.value.trim().slice(0,3);if(!n||!r){toast('Name und Nummer eingeben');return}op({k:'p+',p:{id:uid(),name:n,nr:r,role:cR(prole0.value)}})}
  else if(a==='delp'){if(arm!==v){arm=v;setTimeout(()=>{if(arm===v){arm=null;render()}},3000)}else{arm=null;op({k:'p-',id:v})}}
  else if(a==='resume'){S.cur=v;D=null;catInit=true;const rs=S.sets.find(x=>x.id===v);if(rs)cat=replay(rs).srv==='us'?'srv':'rec';save()}
- else if(a==='cfg'){const u=cfgurl.value.trim();if(u&&!URLRE.test(u)){toast('Ungültige URL: erwartet https://script.google.com/.../exec');return}CFG={url:u,pw:cfgpw.value.trim().slice(0,100)};try{localStorage.setItem(CK,JSON.stringify(CFG))}catch(x){}sync()}
+ else if(a==='cfg'){const u=cfgurl.value.trim();if(u&&!URLRE.test(u)){toast('Ungültige URL: erwartet https://script.google.com/.../exec');return}QUEUED=false;CFG={url:u,pw:cfgpw.value.trim().slice(0,100)};try{localStorage.setItem(CK,JSON.stringify(CFG))}catch(x){}sync()}
  else if(a==='syncnow')sync();
  else if(a==='pushall'){if(!CFG.url){toast('Erst URL speichern');return}pushAll()}
  else if(a==='orient'){ROT=!ROT;try{localStorage.setItem('vbrot',ROT?'1':'0')}catch(x){}view();toast(ROT?'Querformat: Handy quer halten':'Hochformat')}
- else if(a==='restore'){const b=bkRead(),c=b&&cleanState(b.state);if(!c){toast('Kein gültiger Stand gesichert');return}S.players=c.players;S.games=c.games;S.sets=c.sets;S.cur=null;S.pend=[];CFG.init=false;try{localStorage.setItem(CK,JSON.stringify(CFG));localStorage.removeItem(BK)}catch(x){}mig();save();queueAll();toast('Wiederhergestellt, wird hochgeladen');sync()}
+ else if(a==='restore'){const b=bkRead(),c=b&&cleanState(b.state);if(!c){toast('Kein gültiger Stand gesichert');return}S.players=c.players;S.games=c.games;S.sets=c.sets;S.cur=null;S.pend=[];CFG.init=false;QUEUED=true;try{localStorage.setItem(CK,JSON.stringify(CFG));localStorage.removeItem(BK)}catch(x){}mig();save();queueAll();toast('Wiederhergestellt, wird hochgeladen');sync()}
  else if(a==='bkdrop'){try{localStorage.removeItem(BK)}catch(x){}}
  else if(a==='bkexp'){const b=bkRead();if(!b)return;const tx=JSON.stringify(b.state);(navigator.clipboard?navigator.clipboard.writeText(tx):Promise.reject()).then(()=>toast('Kopiert'),()=>{imp.value=tx;imp.select();toast('Text markiert, bitte kopieren')});return}
  else if(a==='install'&&DEFERRED){DEFERRED.prompt();DEFERRED=null}

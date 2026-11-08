@@ -4,8 +4,10 @@
 
 const PASSWORT = 'bitte-aendern'; // dasselbe Passwort in der App eintragen
 
-const VERSION = 5; // Die App prüft diese Nummer und warnt, wenn das Skript veraltet ist
+const VERSION = 6; // Die App prüft diese Nummer und warnt, wenn das Skript veraltet ist
 const MAX_OPS = 5000, MAX_BODY = 1500000, MAX_FAILS = 10, BLOCK_SECONDS = 900;
+// Frühere Beschriftungen (alte Apps senden sie noch, alte Tabellenzeilen enthalten sie)
+const LEGACY = { Annahme: { Ok: 'Gut' }, Angriff: { Recycle: 'Ohne Wirkung' } };
 const HEAD = {
   Spieler: ['id', 'name', 'nr', 'rolle'],
   Spiele: ['id', 'gegner', 'datum'],
@@ -14,8 +16,8 @@ const HEAD = {
   Ereignisse: ['id', 'satz_id', 'spieler_id', 'datum', 'gegner', 'satz', 'spieler', 'nr', 'bereich', 'ergebnis', 'laeufer', 'zeit']
 };
 const ERGEBNISSE = {
-  Annahme: ['Fehler', 'Schlecht', 'Ok', 'Perfekt'],
-  Angriff: ['Fehler', 'Recycle', 'Wirkung', 'Punkt', 'Block'],
+  Annahme: ['Fehler', 'Schlecht', 'Gut', 'Perfekt'],
+  Angriff: ['Fehler', 'Ohne Wirkung', 'Wirkung', 'Punkt', 'Block'],
   Aufschlag: ['Fehler', 'Ohne Wirkung', 'Wirkung', 'Ass'],
   Spielstand: ['Punkt Gegner', 'Gegnerfehler', 'Punkt wir', 'Korrektur wir +1', 'Korrektur wir -1', 'Korrektur Gegner +1', 'Korrektur Gegner -1', 'Aufschlag tauschen']
 };
@@ -101,9 +103,12 @@ function clean_(o) {
     return okid_(o.id) && rot && act && pos !== null && rl !== null ? { k, id: o.id, rot, act, pos, rl } : null;
   }
   if (k === 'e+') {
-    const e = o.e, x = o.x;
+    const e = o.e;
+    let x = o.x;
     if (!e || !x || !okid_(o.sid) || !okid_(e.id) || !(e.p === '' || okid_(e.p))) return null;
-    if (!Object.prototype.hasOwnProperty.call(ERGEBNISSE, x.bereich) || ERGEBNISSE[x.bereich].indexOf(x.ergebnis) < 0) return null;
+    if (!Object.prototype.hasOwnProperty.call(ERGEBNISSE, x.bereich)) return null;
+    if (Object.prototype.hasOwnProperty.call(LEGACY, x.bereich) && Object.prototype.hasOwnProperty.call(LEGACY[x.bereich], x.ergebnis)) x = Object.assign({}, x, { ergebnis: LEGACY[x.bereich][x.ergebnis] });
+    if (ERGEBNISSE[x.bereich].indexOf(x.ergebnis) < 0) return null;
     const rot = int_(e.rot, 1, 6), satz = int_(x.satz, 1, 99), t = Number(e.t);
     if (!rot || !satz || !isFinite(t) || !day_(x.datum)) return null;
     return { k, row: [e.id, o.sid, e.p, x.datum, str_(x.gegner, 40), satz, str_(x.spieler, 40), str_(x.nr, 3), x.bereich, x.ergebnis, rot, Math.floor(t)] };
@@ -134,6 +139,7 @@ function doPost(e) {
     const lock = LockService.getScriptLock();
     lock.waitLock(25000);
     try {
+      migrate_();
       const ctx = { ids: {}, add: {} };
       let skipped = 0;
       ops.forEach(o => { const c = clean_(o); if (c) apply_(c, ctx); else skipped++; });
@@ -148,6 +154,23 @@ function doPost(e) {
 }
 
 // ---------- Schreiben ----------
+// Einmalig: alte Beschriftungen in bestehenden Zeilen auf die neuen umstellen, damit Auswertungen in der Tabelle einheitlich sind
+function migrate_() {
+  const props = PropertiesService.getScriptProperties();
+  if (props.getProperty('labels2') === 'done') return;
+  const s = tab_('Ereignisse'), l = s.getLastRow();
+  if (l > 1) {
+    const rg = s.getRange(2, 9, l - 1, 2), v = rg.getValues();
+    let changed = false;
+    v.forEach(row => {
+      const m = Object.prototype.hasOwnProperty.call(LEGACY, row[0]) ? LEGACY[row[0]] : null;
+      if (m && Object.prototype.hasOwnProperty.call(m, row[1])) { row[1] = m[row[1]]; changed = true; }
+    });
+    if (changed) rg.setValues(v);
+  }
+  props.setProperty('labels2', 'done');
+}
+
 function ids_(n, ctx) {
   if (!ctx.ids[n]) {
     const s = tab_(n), l = s.getLastRow();
@@ -247,6 +270,7 @@ function apply_(o, ctx) {
 function state_() {
   return {
     ver: VERSION,
+    dead: rows_('Geloescht').map(r => r[0]),
     players: rows_('Spieler').map(r => ({ id: r[0], name: r[1], nr: r[2], role: r[3] || '' })),
     games: rows_('Spiele').map(r => ({ id: r[0], opp: r[1], date: r[2] })),
     sets: rows_('Saetze').map(r => ({ id: r[0], gid: r[1], opp: r[2], date: r[3], serve: r[4], rot: Number(r[5]) || 1, act: r[6] ? r[6].split(',') : [], pos: r[7] ? r[7].split(',') : [], rl: rlParse_(r[8]) })),
