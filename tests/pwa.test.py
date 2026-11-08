@@ -69,6 +69,20 @@ def t_logo_missing(pg, ctx, url):
     assert 'none' in pg.evaluate("getComputedStyle(document.body,'::before').backgroundImage") and not pg.errs
 run('Logo: fehlt die Datei, nennt die App die genaue Adresse', t_logo_missing)
 
+def t_report_logo(pg, ctx, url):
+    import base64, io
+    ev = [{'id': f'e{i}', 'p': 'p1', 'c': 'att', 'r': r, 'rot': 1, 't': i} for i, r in enumerate(['pt', 'pt', 'err', 'eff', 'pt'])]
+    st = {'players': [{'id': 'p1', 'name': 'Anna', 'nr': '1', 'role': ''}], 'games': [{'id': 'g1', 'opp': 'Gegner', 'date': '2026-01-01'}], 'cur': None, 'pend': [],
+          'sets': [{'id': 's1', 'gid': 'g1', 'opp': 'Gegner', 'date': '2026-01-01', 'serve': 'Aufschlag', 'rot': 1, 'act': ['p1'], 'pos': [], 'rl': {}, 'ev': ev}]}
+    pg.add_init_script("localStorage.setItem('vbtracker1',%s)" % json.dumps(json.dumps(st)))
+    pg.goto(url + 'index.html'); pg.wait_for_timeout(900)
+    pg.locator('nav [data-act=tab][data-v=eval]').click(); pg.wait_for_timeout(200)
+    pg.locator('[data-act=shareimg]').click(); pg.wait_for_selector('#ov img', timeout=8000)
+    im = Image.open(io.BytesIO(base64.b64decode(pg.evaluate('IMG.url').split(',')[1]))).convert('RGB')
+    r, g, b = im.getpixel((900, 100)); assert r > 150 and g < 90 and b < 90, f'Logo wurde nicht ins Bild gezeichnet: {(r, g, b)}'
+    assert not pg.errs
+run('Bild teilen: das Logo wird ins Bild übernommen (gleicher Ursprung, kein Sicherheitsfehler)', t_report_logo, logo='Logo.png')
+
 if __name__ == '__main__':
     for n, ok, m in RES: print(('PASS ' if ok else 'FAIL ') + n + ('' if ok else '  -> ' + m))
     fails = [r for r in RES if not r[1]]; print(f'\n{len(RES) - len(fails)}/{len(RES)} bestanden'); sys.exit(1 if fails else 0)

@@ -397,7 +397,7 @@ def _(pg):
     open_app(pg, state()); tap(pg, 'nav [data-act=help]'); pg.evaluate("document.querySelectorAll('.help details').forEach(d=>d.open=true)")
     txt = re.sub(r'\s+', ' ', pg.locator('.help').inner_text())
     for w in ['Q Annahme', 'W Angriff', 'E Aufschlag', '1 Fehler', '2 Schlecht', '3 Gut', '4 Perfekt', '2 Ohne Wirkung', '3 Wirkung', '4 Punkt', '5 Block', '2 Ohne Wirkung', '4 Ass',
-              'immer dieselbe Taste', 'Spielerliste', 'U I O P J K L Ö M , .', 'A Punkt Gegner', 'S Gegnerfehler', 'Läufer weiterdrehen', 'Spielstand korrigieren', 'Laptop-Modus', 'Spiele und Sätze']:
+              'immer dieselbe Taste', 'Spielerliste', 'U I O P J K L Ö M , .', 'A Punkt Gegner', 'S Gegnerfehler', 'Läufer weiterdrehen', 'Spielstand korrigieren', 'Laptop-Modus', 'Spiele und Sätze', 'Plus/Minus', 'Saldo', 'Effizienz', 'Als Bild teilen']:
         assert w in txt, f'Anleitung: „{w}“ fehlt'
     assert 'Position 5, 6, 1' not in txt and 'N und M' not in txt, 'Anleitung beschreibt noch die alte Positions-Belegung'
     code = pg.evaluate("[CATKEYS,PKEYS]"); assert code[0] == {'q': 'rec', 'w': 'att', 'e': 'srv'} and code[1] == ['u', 'i', 'o', 'p', 'j', 'k', 'l', 'ö', 'm', ',', '.']
@@ -433,6 +433,82 @@ def _(pg):
     open_app(pg, state(players=1), cfg={'url': URL, 'pw': PW}); pg.wait_for_timeout(700)
     ev = json.loads(pg.evaluate('localStorage.getItem("vbtracker1")'))['sets'][0]['ev']
     assert [(e['c'], e['r']) for e in sorted(ev, key=lambda e: e['t'])] == [('rec', 'ok'), ('att', 'rec'), ('rec', 'ok'), ('att', 'rec')], ev
+
+# ---------- Plus/Minus, Effizienz, Bild zum Teilen ----------
+import base64, io
+def evl(pid, c, r, n, t0=0): return [{'id': f'{pid}{c}{r}{k}{t0}', 'p': pid, 'c': c, 'r': r, 'rot': 1, 't': t0 + k} for k in range(n)]
+def stats_state():
+    s1 = mkset(1); s1['ev'] = (evl('p1', 'att', 'pt', 3) + evl('p1', 'att', 'err', 1) + evl('p1', 'att', 'eff', 2) + evl('p1', 'att', 'rec', 2) + evl('p1', 'att', 'blk', 1) +
+        evl('p1', 'srv', 'ace', 1) + evl('p1', 'srv', 'err', 2) + evl('p1', 'srv', 'none', 1) + evl('p1', 'srv', 'eff', 1) +
+        evl('p1', 'rec', 'err', 1) + evl('p1', 'rec', 'perf', 2) + evl('p1', 'rec', 'ok', 1) + evl('p1', 'rec', 'bad', 1) +
+        evl('p2', 'att', 'pt', 1) + evl('p2', 'att', 'err', 4) + evl('p2', 'srv', 'err', 1) + evl('p2', 'rec', 'perf', 4, 500) + evl('p3', 'srv', 'ace', 2, 800))
+    s1['serve'] = 'Aufschlag'; return state(sets=[s1])
+
+@check('Plus/Minus und Effizienz: Kennzahlen werden richtig berechnet')
+def _(pg):
+    open_app(pg, stats_state())
+    d = pg.evaluate("pm(S.sets[0].ev.filter(e=>e.p==='p1'),'p1')")
+    assert (d['plus'], d['minus'], d['saldo']) == (5, 4, 1), d                       # Punkte 3 + Block 1 + Ass 1, Fehler 1 + 2 + 1
+    assert (d['aN'], d['sN'], d['rN']) == (8, 5, 5) and d['blk'] == 1 and d['ace'] == 1, d
+    assert abs(d['aEff'] - 0.25) < 1e-9 and abs(d['sEff'] + 0.2) < 1e-9, d            # (3-1)/8, (1-2)/5
+    assert abs(d['rAvg'] - 1.8) < 1e-9 and abs(d['rEff'] - 0.6) < 1e-9 and abs(d['rPos'] - 0.6) < 1e-9, d   # (1+2+6)/5, /3, (1+2)/5
+    t = pg.evaluate("pm(S.sets[0].ev,null)"); assert t['plus'] == 5 + 1 + 2 and t['minus'] == 4 + 5, t
+    e = pg.evaluate("pm([],'p9')"); assert e['saldo'] == 0 and e['aEff'] is None and e['sEff'] is None and e['rEff'] is None, e   # keine Division durch 0
+
+@check('Plus/Minus: Karte in der Auswertung, nach Saldo sortiert, Farben erst ab 3 Aktionen')
+def _(pg):
+    open_app(pg, stats_state()); tap(pg, 'nav [data-act=tab][data-v=eval]')
+    card = pg.locator('.card:has(h2:has-text("Plus/Minus und Effizienz"))'); assert card.count() == 1
+    rows = card.locator('.er'); assert rows.count() == 4, rows.count()                    # Team + 3 Spieler
+    txt = [re.sub(r'\s+', ' ', r.inner_text()) for r in rows.all()]
+    assert txt[0].startswith('Team'), txt[0]
+    order = [re.search(r'#(\d+)', x).group(1) for x in txt[1:]]; assert order == ['3', '1', '2'], order    # Saldo +2, +1, -4
+    assert 'Saldo +2' in txt[1] and 'Saldo +1' in txt[2] and 'Saldo −4' in txt[3], txt
+    assert 'Angriff 25%' in txt[2] and 'Aufschlag −20%' in txt[2] and 'Annahme 60%' in txt[2], txt[2]
+    cls = lambda i, word: card.locator('.er').nth(i).locator(f'.pill:has-text("{word}")').get_attribute('class').split()
+    assert 'g' in cls(1, 'Saldo') and 'b' in cls(3, 'Saldo')                               # +2 grün, -4 rot
+    assert 'g' in cls(2, 'Angriff') and 'b' in cls(2, 'Aufschlag') and 'w' in cls(2, 'Annahme')       # 25% = Grenze grün, -20% rot, 60% gelb, (cls(2, 'Angriff'), cls(2, 'Aufschlag'), cls(2, 'Annahme'))
+    assert cls(3, 'Aufschlag') == ['pill'], 'bei nur 1 Aufschlag darf keine Farbe erscheinen'
+
+@check('Bild teilen: Bild entsteht, ist 1080 px breit, nicht leer, Kopf und Fuß stimmen')
+def _(pg):
+    from PIL import Image
+    st = stats_state(); st['games'][0]['opp'] = 'Testgegner'; open_app(pg, st); tap(pg, 'nav [data-act=tab][data-v=eval]')
+    tap(pg, '[data-act=shareimg]'); pg.wait_for_selector('#ov img', timeout=8000)
+    url = pg.evaluate('IMG.url'); assert url.startswith('data:image/png;base64,'), url[:40]
+    im = Image.open(io.BytesIO(base64.b64decode(url.split(',')[1]))).convert('RGB'); w, h = im.size
+    assert w == 1080 and 700 < h < 1400, (w, h)
+    assert im.getpixel((10, 10)) == (23, 32, 42), im.getpixel((10, 10))                    # dunkler Kopf
+    assert im.getpixel((10, h - 5)) == (255, 255, 255)                                     # weißer Fuß
+    colors = len(set(im.resize((108, h // 10)).getdata())); assert colors > 25, f'Bild wirkt leer ({colors} Farben)'
+    assert pg.locator('#ov a.dl').get_attribute('download') == 'volleyball-auswertung.png' and not pg.errs
+    im.save('/tmp/report.png')
+
+@check('Bild teilen: nutzt das Teilen-Menü des Geräts, wenn vorhanden')
+def _(pg):
+    pg.add_init_script("navigator.canShare=d=>!!(d&&d.files&&d.files.length);navigator.share=d=>{window.__shared={n:d.files[0].name,t:d.files[0].type,s:d.files[0].size};return Promise.resolve()}")
+    open_app(pg, stats_state()); tap(pg, 'nav [data-act=tab][data-v=eval]'); tap(pg, '[data-act=shareimg]'); pg.wait_for_timeout(1200)
+    sh = pg.evaluate('window.__shared'); assert sh and sh['t'] == 'image/png' and sh['s'] > 8000 and sh['n'].endswith('.png'), sh
+    assert pg.locator('#ov').count() == 0, 'Fenster darf nicht zusätzlich aufgehen'
+
+@check('Bild teilen: Abbrechen im Teilen-Menü ist kein Fehler; ohne Daten kommt ein Hinweis')
+def _(pg):
+    pg.add_init_script("navigator.canShare=()=>true;navigator.share=()=>Promise.reject(Object.assign(new Error('x'),{name:'AbortError'}))")
+    open_app(pg, stats_state()); tap(pg, 'nav [data-act=tab][data-v=eval]'); tap(pg, '[data-act=shareimg]'); pg.wait_for_timeout(1200)
+    assert pg.locator('#ov').count() == 0 and not pg.errs
+    open_app(pg, state(sets=[mkset(1)])); tap(pg, 'nav [data-act=tab][data-v=eval]')
+    assert pg.locator('[data-act=shareimg]').count() == 1; tap(pg, '[data-act=shareimg]'); pg.wait_for_timeout(500)
+    assert pg.locator('#ov').count() == 0 and 'Keine Daten' in pg.locator('#toast').inner_text() and not pg.errs
+
+@check('Bild teilen: gilt für den gewählten Satz bzw. das gewählte Spiel')
+def _(pg):
+    from PIL import Image
+    st = stats_state(); s2 = mkset(2); s2['ev'] = evl('p2', 'att', 'pt', 5, 2000); st['sets'].append(s2); open_app(pg, st); tap(pg, 'nav [data-act=tab][data-v=eval]')
+    pg.locator('[data-sel=fset]').select_option('s:s2'); pg.wait_for_timeout(150); tap(pg, '[data-act=shareimg]'); pg.wait_for_selector('#ov img')
+    im1 = Image.open(io.BytesIO(base64.b64decode(pg.evaluate('IMG.url').split(',')[1]))).convert('RGB')
+    tap(pg, '[data-act=gearx]'); pg.locator('[data-sel=fset]').select_option('g:g1'); pg.wait_for_timeout(150); tap(pg, '[data-act=shareimg]'); pg.wait_for_selector('#ov img')
+    im2 = Image.open(io.BytesIO(base64.b64decode(pg.evaluate('IMG.url').split(',')[1]))).convert('RGB')
+    assert im1.size[1] < im2.size[1], ('Satz 2 hat nur 1 Spieler, das Spiel mehrere', im1.size, im2.size)
 
 @check('Aufschlagrecht wechselt mit jedem Satz')
 def _(pg):
