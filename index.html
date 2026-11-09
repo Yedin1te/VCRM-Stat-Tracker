@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-MGVvjRJzZtj1oqBqDWIsygUzwlfYHW5KrPPc2GFjv/A='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-a5R4qFv9RUkTgB7HGd5nwABxZqSYHlJygtrHgePYiBQ='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#17202a">
@@ -264,8 +264,8 @@ function helpHtml(){
  <p><b>Rollen flexibel:</b> Die Rolle beim Spieler ist nur die Standardrolle. Beim Satzstart und unter „Wechsel" kannst du die Rolle für diesen Satz ändern, zum Beispiel einen Außenangreifer als Diagonal oder Libero einsetzen. Sortierung, Farbe und der Läufer richten sich nach dieser Satz-Rolle.</p>
  <p>Die Zeilen sind nach Rolle gruppiert (MB Mittelblocker, AA Außenangreifer, DI Diagonalangreifer, ZP Zuspieler, LI Libero) und innerhalb einer Rolle nach Rückennummer sortiert. Die kleine Zahl vorn ist die aktuelle Position.</p></details>
  <details><summary>Auswertung lesen</summary>
- <p>Oben wählst du, ob alle Spiele, ein ganzes Spiel oder ein einzelner Satz gezeigt wird. Darunter siehst du das Auswertungsblatt im A4-Querformat: oben Gegner, Datum und Ergebnis, dann eine Tabelle mit der Anzahl von Annahme, Angriff und Aufschlag je Satz (Σ = Summe), dahinter Effizienz und Plus/Minus, ganz unten die Teamwerte Annahme-Verteilung, Angriffsverteilung und Sideout-Quote je Läufer. Am Handy hilft das Querformat (⟳) oder seitliches Wischen. Die Karten „Punkte", „Plus/Minus" und die Einzelkarten stehen darunter im Bereich „Weitere Auswertungen".</p>
- <p><b>Teamwerte:</b> Die Annahme-Verteilung zeigt, wie viele Annahmen Fehler, Schlecht, Gut oder Perfekt waren (auch je Satz). Die Angriffsverteilung zeigt den Anteil der Angriffe je Spieler. Sideout-Quote: Anteil der Ballwechsel nach gegnerischem Aufschlag, die wir gewonnen haben, je Läufer (Position des Zuspielers). Break: dasselbe nach eigenem Aufschlag. Grün ab 65 %, rot unter 50 %, erst ab 3 Ballwechseln. Es zählen nur Ballwechsel mit erfasstem Punkt.</p>
+ <p>Oben wählst du, ob alle Spiele, ein ganzes Spiel oder ein einzelner Satz gezeigt wird. Darunter siehst du das Auswertungsblatt im A4-Querformat: oben Gegner, Datum und Ergebnis, dann eine Tabelle mit der Anzahl je Bewertung (Annahme: Fehler, Schlecht, Gut, Perfekt; Angriff und Aufschlag: Fehler, ohne Wirkung, mit Wirkung, Punkt bzw. Ass, beim Angriff auch Block), dahinter Effizienz und Plus/Minus, ganz unten die Teamwerte Annahme-Verteilung, Angriffsverteilung und Sideout-Quote je Läufer. Die Zahlen gelten für die oben gewählte Auswahl (alle Spiele, ein Spiel oder ein Satz). Für einen einzelnen Satz wählst du ihn oben aus. Am Handy hilft das Querformat (⟳) oder seitliches Wischen. Die Karten „Punkte", „Plus/Minus" und die Einzelkarten stehen darunter im Bereich „Weitere Auswertungen".</p>
+ <p><b>Teamwerte:</b> Die Annahme-Verteilung zeigt, wie viele Annahmen Fehler, Schlecht, Gut oder Perfekt waren (auch je Satz). Die Angriffsverteilung zeigt den Anteil der Angriffe je Spieler. Sideout-Quote: Anteil der Ballwechsel nach gegnerischem Aufschlag, die wir gewonnen haben, je Läufer (Position des Zuspielers). 1st Ball: Anteil dieser Ballwechsel, die wir direkt mit dem ersten Angriff nach der Annahme gewonnen haben (Angriff „Punkt“, ohne Block und ohne Gegnerfehler). Break: dasselbe wie Sideout nach eigenem Aufschlag. Grün ab 65 %, rot unter 50 %, erst ab 3 Ballwechseln. Es zählen nur Ballwechsel mit erfasstem Punkt.</p>
  <p><b>Annahme:</b> Ø-Note und Anteil positiver Annahmen. <b>Angriff:</b> Punktquote und Fehlerquote, dazu die Zahl der Blockpunkte (die Quoten rechnen ohne Block). <b>Aufschlag:</b> Fehlerquote und „Wirkung+Ass", also der Anteil der Aufschläge, die Druck gemacht haben.</p>
  <p><b>Plus/Minus:</b> Plus sind direkte Punkte (Angriff „Punkt", Block, Ass), Minus sind eigene Fehler (Annahme-, Angriffs- und Aufschlagfehler). Der Saldo ist Plus minus Minus, grün über 0 und rot darunter. In den Karten sind die Spieler nach Saldo sortiert, im Blatt nach Rückennummer.</p>
  <p><b>Effizienz:</b> Angriff = (Punkte − Fehler) ÷ Angriffe, ohne Blocks. Grün ab 25 %, rot unter 5 %. Aufschlag = (Asse − Fehler) ÷ Aufschläge. Grün ab 0 %, rot unter −15 %. Annahme = Ø-Note in Prozent von 3. Grün ab 73 %, rot unter 50 %. Alle Farben erscheinen erst ab 3 Aktionen.</p>
@@ -342,27 +342,31 @@ const FAM="system-ui,-apple-system,'Segoe UI',Roboto,sans-serif",MC=document.cre
 const SCOL={g:'#1f7a4d',w:'#b7791f',b:'#c0392b',n:'#2f5d8a','':'#e4e1d8'},RCOL={MB:'#2f5d8a',AA:'#1f7a4d',DI:'#a8571a',ZP:'#7b4fa3',LI:'#5b6770'};
 const xe=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const r1=v=>Math.round(v*10)/10;
-function rallies(sets){   // jeder Ballwechsel mit Aufschlagrecht, Läufer und Ausgang (Korrekturen zählen nicht)
+function rallies(sets){   // jeder Ballwechsel mit Aufschlagrecht, Läufer und Ausgang (Korrekturen zählen nicht); fb = First-Ball-Sideout
  const R=[];
- sets.forEach(s=>{let srv=s.serve==='Aufschlag'?'us':'opp';
+ sets.forEach(s=>{let srv=s.serve==='Aufschlag'?'us':'opp',rec=false,att=false,fb=false;
   for(const e of s.ev){const p=ptOf(e.c,e.r);
-   if(p){R.push({srv,rot:e.rot,won:p==='u'});srv=p==='u'?'us':'opp'}
+   if(e.c==='rec')rec=true;else if(e.c==='att'&&!att){att=true;fb=e.r==='pt'}
+   if(p){R.push({srv,rot:e.rot,won:p==='u',fb:p==='u'&&rec&&fb});srv=p==='u'?'us':'opp';rec=att=fb=false}
    else if(e.c==='sc'&&e.r==='sv')srv=srv==='us'?'opp':'us'}});
  return R;
 }
+const COLS=[{g:'Annahme',c:'rec',items:[['err','Fehl.','b'],['bad','Schl.','w'],['ok','Gut','n'],['perf','Perf.','g']]},
+ {g:'Angriff',c:'att',items:[['err','Fehl.','b'],['rec','Ohne W.','w'],['eff','Wirk.','n'],['pt','Punkt','g'],['blk','Block','g']]},
+ {g:'Aufschlag',c:'srv',items:[['err','Fehl.','b'],['none','Ohne W.','w'],['eff','Wirk.','n'],['ace','Ass','g']]}];
 function sheetData(){
  const sets=S.sets.filter(s=>fSet==='all'||fSet==='s:'+s.id||fSet==='g:'+s.gid);
  let ev=[];sets.forEach(s=>{ev=ev.concat(s.ev)});
- const nn=p=>Number(p.nr)||0;
- const rows=[...new Set(ev.map(e=>e.p).filter(Boolean))].map(id=>{const p=S.players.find(x=>x.id===id)||{id,name:'?',nr:'',role:''};return{id,p,role:sets.length===1?eRole(sets[0],p):p.role,d:pm(ev,id),u:sets.map(s=>pm(s.ev,id))}})
+ const nn=p=>Number(p.nr)||0,cn=(evs,id)=>{const o={};COLS.forEach(g=>{o[g.c]=g.items.map(i=>evs.filter(e=>(id===null||e.p===id)&&e.c===g.c&&e.r===i[0]).length)});return o};
+ const rows=[...new Set(ev.map(e=>e.p).filter(Boolean))].map(id=>{const p=S.players.find(x=>x.id===id)||{id,name:'?',nr:'',role:''};return{id,p,role:sets.length===1?eRole(sets[0],p):p.role,d:pm(ev,id),c:cn(ev,id)}})
   .filter(x=>x.d.plus+x.d.minus+x.d.aN+x.d.sN+x.d.rN>0).sort((a,b)=>nn(a.p)-nn(b.p)||String(a.p.name).localeCompare(String(b.p.name)));
  if(!rows.length)return null;
  const one=fSet[0]==='s'?sets[0]:null,g=fSet[0]==='g'?S.games.find(x=>x.id===fSet.slice(2)):one?S.games.find(x=>x.id===one.gid):null;
  const res=sets.map(s=>{const q=replay(s);return{n:nrOf(s),u:q.u,o:q.o}});
- const k=fSet==='all'||sets.length>5?0:sets.length,sg=k===1?0:1;
+ const k=fSet==='all'||sets.length>5?0:sets.length;
  const rc=evs=>['err','bad','ok','perf'].map(r=>evs.filter(e=>e.c==='rec'&&e.r===r).length);
- const ra=rallies(sets),so=[1,2,3,4,5,6].map(r=>{const a=ra.filter(x=>x.rot===r&&x.srv==='opp'),b=ra.filter(x=>x.rot===r&&x.srv==='us');return{r,n:a.length,w:a.filter(x=>x.won).length,bn:b.length,bw:b.filter(x=>x.won).length}});
- return{sets,rows,k,sg,T:pm(ev,null),Ts:sets.map(s=>pm(s.ev,null)),res,pu:res.reduce((a,x)=>a+x.u,0),po:res.reduce((a,x)=>a+x.o,0),so,
+ const ra=rallies(sets),so=[1,2,3,4,5,6].map(r=>{const a=ra.filter(x=>x.rot===r&&x.srv==='opp'),b=ra.filter(x=>x.rot===r&&x.srv==='us');return{r,n:a.length,w:a.filter(x=>x.won).length,f:a.filter(x=>x.fb).length,bn:b.length,bw:b.filter(x=>x.won).length}});
+ return{sets,rows,k,T:pm(ev,null),cT:cn(ev,null),res,pu:res.reduce((a,x)=>a+x.u,0),po:res.reduce((a,x)=>a+x.o,0),so,
   title:g?g.opp:'Alle Spiele',sub:g?g.date.split('-').reverse().join('.')+' · '+(one?'Satz '+nrOf(one):'Gesamtes Spiel'):sets.length+(sets.length===1?' Satz':' Sätze'),
   rec:rc(ev),recS:k>=2?sets.map(s=>rc(s.ev)):[]};
 }
@@ -384,29 +388,28 @@ function sheetSvg(d,o){
  if(o.logo)out.push(`<image href="${xe(o.logo)}" x="${W-X-150}" y="13" width="150" height="60" preserveAspectRatio="xMaxYMid meet"/>`);
  else if(o.ball)out.push(ball(W-X-32,43));
  // Tabelle
- const uc=d.k+d.sg,gp=6,pw0=196,eW0=64,nW0=44,sW0=60,RH=Math.max(24,Math.min(34,Math.floor((794-100-44-4-22-214-50)/(d.rows.length+1))));
- let cw=Math.min(56,(CW-pw0-3*eW0-2*nW0-sW0-5*gp)/(3*uc)),extra=CW-(pw0+3*uc*cw+3*eW0+2*nW0+sW0+5*gp);
+ const NC=COLS.map(g=>g.items.length),tc=NC[0]+NC[1]+NC[2],gp=6,pw0=196,eW0=64,nW0=44,sW0=60,RH=Math.max(24,Math.min(34,Math.floor((794-100-44-4-22-214-62)/(d.rows.length+1))));
+ let cw=Math.min(56,(CW-pw0-3*eW0-2*nW0-sW0-5*gp)/tc),extra=CW-(pw0+tc*cw+3*eW0+2*nW0+sW0+5*gp);
  const pw=pw0+Math.min(extra*.35,100);extra-=pw-pw0;const f=1+extra/(3*eW0+2*nW0+sW0),eW=eW0*f,nW=nW0*f,sW=sW0*f;
- const gx=[];let x=X+pw+gp;for(let g=0;g<3;g++){gx.push(x);x+=uc*cw+gp}
+ const gx=[];let x=X+pw+gp;for(let g=0;g<3;g++){gx.push(x);x+=NC[g]*cw+gp}
  const ex=x,mx=ex+3*eW+gp,y0=100,ys=y0+44;
  T('Spieler',X+6,y0+10,12,'700','#5b6770','start',pw-8);
- [[gx[0],uc*cw,'Annahme'],[gx[1],uc*cw,'Angriff'],[gx[2],uc*cw,'Aufschlag'],[ex,3*eW,'Effizienz'],[mx,2*nW+sW,'Plus / Minus']].forEach(g=>{R(g[0],y0,g[1],20,'#17202a',5);T(g[2],g[0]+g[1]/2,y0+10.5,12,'700','#ffffff','middle',g[1]-6)});
- for(let g=0;g<3;g++)for(let j=0;j<uc;j++)T(j<d.k?'S'+d.res[j].n:'Σ',gx[g]+j*cw+cw/2,y0+32,11,'700','#5b6770','middle',cw-2);
+ [[gx[0],NC[0]*cw,'Annahme'],[gx[1],NC[1]*cw,'Angriff'],[gx[2],NC[2]*cw,'Aufschlag'],[ex,3*eW,'Effizienz'],[mx,2*nW+sW,'Plus / Minus']].forEach(g=>{R(g[0],y0,g[1],20,'#17202a',5);T(g[2],g[0]+g[1]/2,y0+10.5,12,'700','#ffffff','middle',g[1]-6)});
+ COLS.forEach((G,g)=>G.items.forEach((i,j)=>T(i[1],gx[g]+j*cw+cw/2,y0+32,10,'700',SCOL[i[2]],'middle',cw-2)));
  ['Annahme','Angriff','Aufschlag'].forEach((l,i)=>T(l,ex+i*eW+eW/2,y0+32,11,'700','#5b6770','middle',eW-4));
  [['+',nW],['−',nW],['Saldo',sW]].forEach((l,i)=>T(l[0],mx+(i<2?i*nW:2*nW)+l[1]/2,y0+32,11,'700','#5b6770','middle',l[1]-4));
- const KEY=['rN','aN','sN'];
- const draw=(label,dd,u,my,team,role)=>{
+ const draw=(label,dd,cc,my,team,role)=>{
   const gr=pmGrades(dd);
   if(role){R(X+4,my-8,28,16,RCOL[role]||'#5b6770',4);T(role,X+18,my+.5,10,'700','#ffffff','middle',24);T(label,X+38,my,13,team?'700':'600','#17202a','start',pw-42)}
   else T(label,X+6,my,13,'700','#17202a','start',pw-10);
-  for(let g=0;g<3;g++)for(let j=0;j<uc;j++){const tot=j>=d.k,v=tot?dd[KEY[g]]:u[j][KEY[g]];T(v?v:'–',gx[g]+j*cw+cw/2,my,tot?13:12,tot?'700':v?'600':'400',v?'#17202a':'#b8bec6','middle',cw-3)}
+  COLS.forEach((G,g)=>G.items.forEach((i,j)=>{const v=cc[G.c][j];T(v?v:'–',gx[g]+j*cw+cw/2,my,13,v?'700':'400',v?'#17202a':'#b8bec6','middle',cw-3)}));
   pill(pctS(dd.rEff),gr.r,ex+eW/2,my,eW);pill(pctS(dd.aEff),gr.a,ex+1.5*eW,my,eW);pill(pctS(dd.sEff),gr.v,ex+2.5*eW,my,eW);
   T(dd.plus?'+'+dd.plus:'–',mx+nW/2,my,13,'700',dd.plus?'#1f7a4d':'#b8bec6','middle',nW-4);
   T(dd.minus?'−'+dd.minus:'–',mx+1.5*nW,my,13,'700',dd.minus?'#c0392b':'#b8bec6','middle',nW-4);
   pill(sgn(dd.saldo),gr.s,mx+2*nW+sW/2,my,sW);
  };
- d.rows.forEach((r,i)=>{const ry=ys+i*RH;if(i%2)R(X-4,ry,CW+8,RH,'#f6f5f0',4);draw('#'+r.p.nr+' '+r.p.name,r.d,r.u,ry+RH/2,false,r.role)});
- const ty=ys+d.rows.length*RH+4;R(X-4,ty,CW+8,RH+4,'#e9e6de',6);draw('Team',d.T,d.Ts,ty+RH/2+2,true,'');
+ d.rows.forEach((r,i)=>{const ry=ys+i*RH;if(i%2)R(X-4,ry,CW+8,RH,'#f6f5f0',4);draw('#'+r.p.nr+' '+r.p.name,r.d,r.c,ry+RH/2,false,r.role)});
+ const ty=ys+d.rows.length*RH+4;R(X-4,ty,CW+8,RH+4,'#e9e6de',6);draw('Team',d.T,d.cT,ty+RH/2+2,true,'');
  // Teamauswertung
  const by=ty+RH+22,bh=214,bw=(CW-24)/3,bx=i=>X+i*(bw+12),LB=[['Fehler','b'],['Schlecht','w'],['Gut','n'],['Perfekt','g']];
  for(let i=0;i<3;i++)R(bx(i),by,bw,bh,'#f3f1ec',10);
@@ -425,17 +428,19 @@ function sheetSvg(d,o){
   L.slice(0,show).forEach((r,i)=>{const ly=by+42+i*21;T('#'+r.p.nr+' '+r.p.name,x0,ly,11.5,'600','#17202a','start',118);R(x0+124,ly-7,Math.max(2,(iw-124-62)*r.d.aN/mxA),14,SCOL.n,3);T(r.d.aN+' · '+Math.round(100*r.d.aN/tot)+'%',x0+iw,ly,11,'600','#17202a','end',58)});
   if(L.length>show)T('+ '+(L.length-show)+' weitere',x0,by+42+show*21,11,'400','#6b7280','start',iw)}
  // 3) Sideout je Läufer
- {const x0=bx(2)+14,iw=bw-28,sn=d.so.reduce((a,r)=>a+r.n,0),sw3=d.so.reduce((a,r)=>a+r.w,0);
-  T('Sideout-Quote je Läufer'+(sn?' · gesamt '+Math.round(100*sw3/sn)+'%':''),x0,by+20,13,'700','#17202a','start',iw);
-  T('Läufer',x0,by+40,10,'700','#6b7280','start',50);T('Sideout',x0+62,by+40,10,'700','#6b7280','start',60);T('Break',x0+iw,by+40,10,'700','#6b7280','end',44);
+ {const x0=bx(2)+14,iw=bw-28,sn=d.so.reduce((a,r)=>a+r.n,0),sw3=d.so.reduce((a,r)=>a+r.w,0),sf=d.so.reduce((a,r)=>a+r.f,0);
+  T('Sideout-Quote je Läufer'+(sn?' · gesamt '+Math.round(100*sw3/sn)+'% · 1st Ball '+Math.round(100*sf/sn)+'%':''),x0,by+20,13,'700','#17202a','start',iw);
+  T('Läufer',x0,by+40,10,'700','#6b7280','start',50);T('Sideout',x0+62,by+40,10,'700','#6b7280','start',60);T('1st Ball',x0+iw-44,by+40,10,'700','#6b7280','end',44);T('Break',x0+iw,by+40,10,'700','#6b7280','end',40);
   d.so.forEach((r,i)=>{const ly=by+62+i*26,q=r.n?r.w/r.n:null,gr=r.n>=3?(q>=.65?'g':q<.5?'b':'w'):'';
    T('Läufer '+r.r,x0,ly,12,'600','#17202a','start',58);
-   R(x0+62,ly-7,110,14,'#e4e1d8',3);if(r.n)R(x0+62,ly-7,Math.max(2,110*q),14,gr?SCOL[gr]:'#9aa3ad',3);
-   T(r.n?Math.round(100*q)+'%  '+r.w+'/'+r.n:'–',x0+178,ly,11,'600','#17202a','start',iw-178-46);
-   T(r.bn?Math.round(100*r.bw/r.bn)+'%':'–',x0+iw,ly,11,'600','#17202a','end',44)})}
+   R(x0+62,ly-7,80,14,'#e4e1d8',3);if(r.n)R(x0+62,ly-7,Math.max(2,80*q),14,gr?SCOL[gr]:'#9aa3ad',3);
+   T(r.n?Math.round(100*q)+'%  '+r.w+'/'+r.n:'–',x0+148,ly,11,'600','#17202a','start',iw-148-90);
+   T(r.n?Math.round(100*r.f/r.n)+'%':'–',x0+iw-44,ly,11,'600','#17202a','end',40);
+   T(r.bn?Math.round(100*r.bw/r.bn)+'%':'–',x0+iw,ly,11,'600','#17202a','end',40)})}
  // Fuß
- const H=Math.max(794,by+bh+50);
- T('Zahlen = Aktionen je Satz (Σ = Summe) · Angriff ohne Block · Effizienz Angriff/Aufschlag: (Punkte − Fehler) ÷ Aktionen, Annahme: Ø-Note in % von 3 · Plus = direkte Punkte, Minus = eigene Fehler',X,H-34,10,'400','#8a94a0','start',CW);
+ const H=Math.max(794,by+bh+62);
+ T('Zahlen = Anzahl je Bewertung (Ohne W. = ohne Wirkung, Wirk. = mit Wirkung) · Effizienz Angriff/Aufschlag: (Punkte − Fehler) ÷ Aktionen ohne Block, Annahme: Ø-Note in % von 3 · Plus = direkte Punkte, Minus = eigene Fehler',X,H-34,10,'400','#8a94a0','start',CW);
+ T('1st Ball = Sideout direkt mit dem ersten Angriff nach der Annahme (Punkt) · Zahl = Anteil an allen Ballwechseln nach gegnerischem Aufschlag',X,H-46,10,'400','#8a94a0','start',CW);
  T('Sideout = Punkt nach gegnerischem Aufschlag · Break = Punkt nach eigenem Aufschlag · Läufer = Position des Zuspielers · Farben ab 3 Aktionen',X,H-20,10,'400','#8a94a0','start',CW);
  T('Volleyball Tracker · '+new Date().toLocaleDateString('de-DE'),X,H-7,10,'700','#5b6770','start',CW);
  return `<svg xmlns="http://www.w3.org/2000/svg" class="sheet" viewBox="0 0 ${W} ${H}"${o.img?` width="${W}" height="${H}"`:' role="img" aria-label="Auswertungsblatt"'} font-family="${FAM}"><rect width="${W}" height="${H}" fill="#ffffff"/>${out.join('')}</svg>`;
