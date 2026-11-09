@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-+p//YH9vRlQZ3G9gGAe6MdXvPmTZfUucHDmBTx++WEg='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-MGVvjRJzZtj1oqBqDWIsygUzwlfYHW5KrPPc2GFjv/A='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#17202a">
@@ -115,6 +115,9 @@ html.lap .gl{max-width:1150px}
 .md img{width:100%;border-radius:8px;border:1px solid var(--bd)}.dl{display:block;text-align:center;margin-top:8px;padding:12px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);text-decoration:none;font-weight:700}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 14px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
 #toast.show{opacity:1}
+.sheetwrap{overflow-x:auto;background:#fff;border:1px solid var(--bd);border-radius:10px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
+.sheetbox{min-width:900px}.sheetbox svg{display:block;width:100%;height:auto}
+.evd{margin-bottom:12px}.evd>summary{font-weight:700;padding:10px 4px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -123,7 +126,7 @@ html.lap .gl{max-width:1150px}
 <div id="toast"></div>
 <script>
 const K='vbtracker1';
-let S={players:[],sets:[],cur:null},tab='game',sel=null,sub=false,fSet='all',D=null,cat='rec',arm=null,modal=false,fix=false,catInit=false;
+let S={players:[],sets:[],cur:null},tab='game',sel=null,sub=false,fSet='all',D=null,cat='rec',arm=null,modal=false,fix=false,catInit=false,evOpen=false;
 let RAW=null;try{RAW=localStorage.getItem(K)}catch(e){}
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
 const uid=()=>Math.random().toString(36).slice(2,9);
@@ -261,11 +264,12 @@ function helpHtml(){
  <p><b>Rollen flexibel:</b> Die Rolle beim Spieler ist nur die Standardrolle. Beim Satzstart und unter „Wechsel" kannst du die Rolle für diesen Satz ändern, zum Beispiel einen Außenangreifer als Diagonal oder Libero einsetzen. Sortierung, Farbe und der Läufer richten sich nach dieser Satz-Rolle.</p>
  <p>Die Zeilen sind nach Rolle gruppiert (MB Mittelblocker, AA Außenangreifer, DI Diagonalangreifer, ZP Zuspieler, LI Libero) und innerhalb einer Rolle nach Rückennummer sortiert. Die kleine Zahl vorn ist die aktuelle Position.</p></details>
  <details><summary>Auswertung lesen</summary>
- <p>Oben wählst du, ob alle Spiele, ein ganzes Spiel oder ein einzelner Satz gezeigt wird. Die Karte „Punkte" zeigt, woher unsere Punkte kamen (Angriff, Block, Ass, Gegnerfehler, Sonstige), und die Satzergebnisse.</p>
+ <p>Oben wählst du, ob alle Spiele, ein ganzes Spiel oder ein einzelner Satz gezeigt wird. Darunter siehst du das Auswertungsblatt im A4-Querformat: oben Gegner, Datum und Ergebnis, dann eine Tabelle mit der Anzahl von Annahme, Angriff und Aufschlag je Satz (Σ = Summe), dahinter Effizienz und Plus/Minus, ganz unten die Teamwerte Annahme-Verteilung, Angriffsverteilung und Sideout-Quote je Läufer. Am Handy hilft das Querformat (⟳) oder seitliches Wischen. Die Karten „Punkte", „Plus/Minus" und die Einzelkarten stehen darunter im Bereich „Weitere Auswertungen".</p>
+ <p><b>Teamwerte:</b> Die Annahme-Verteilung zeigt, wie viele Annahmen Fehler, Schlecht, Gut oder Perfekt waren (auch je Satz). Die Angriffsverteilung zeigt den Anteil der Angriffe je Spieler. Sideout-Quote: Anteil der Ballwechsel nach gegnerischem Aufschlag, die wir gewonnen haben, je Läufer (Position des Zuspielers). Break: dasselbe nach eigenem Aufschlag. Grün ab 65 %, rot unter 50 %, erst ab 3 Ballwechseln. Es zählen nur Ballwechsel mit erfasstem Punkt.</p>
  <p><b>Annahme:</b> Ø-Note und Anteil positiver Annahmen. <b>Angriff:</b> Punktquote und Fehlerquote, dazu die Zahl der Blockpunkte (die Quoten rechnen ohne Block). <b>Aufschlag:</b> Fehlerquote und „Wirkung+Ass", also der Anteil der Aufschläge, die Druck gemacht haben.</p>
- <p><b>Plus/Minus:</b> Plus sind direkte Punkte (Angriff „Punkt", Block, Ass), Minus sind eigene Fehler (Annahme-, Angriffs- und Aufschlagfehler). Der Saldo ist Plus minus Minus, grün über 0 und rot darunter. Die Spieler sind nach Saldo sortiert.</p>
+ <p><b>Plus/Minus:</b> Plus sind direkte Punkte (Angriff „Punkt", Block, Ass), Minus sind eigene Fehler (Annahme-, Angriffs- und Aufschlagfehler). Der Saldo ist Plus minus Minus, grün über 0 und rot darunter. In den Karten sind die Spieler nach Saldo sortiert, im Blatt nach Rückennummer.</p>
  <p><b>Effizienz:</b> Angriff = (Punkte − Fehler) ÷ Angriffe, ohne Blocks. Grün ab 25 %, rot unter 5 %. Aufschlag = (Asse − Fehler) ÷ Aufschläge. Grün ab 0 %, rot unter −15 %. Annahme = Ø-Note in Prozent von 3. Grün ab 73 %, rot unter 50 %. Alle Farben erscheinen erst ab 3 Aktionen.</p>
- <p><b>Als Bild teilen:</b> Der Knopf oben in der Auswertung erzeugt ein kompaktes Bild der gewählten Auswertung (Ergebnis, Teamwerte, Spielertabelle) und öffnet das Teilen-Menü deines Geräts, zum Beispiel für WhatsApp. Geht das nicht, erscheint das Bild zum Speichern.</p>
+ <p><b>Als Bild teilen:</b> Der Knopf oben in der Auswertung erzeugt das Auswertungsblatt als Bild im Querformat (Ergebnis, Tabelle, Teamwerte) und öffnet das Teilen-Menü deines Geräts, zum Beispiel für WhatsApp. Geht das nicht, erscheint das Bild zum Speichern.</p>
  <p>Die Balken zeigen die Verteilung. Die Farbe der Kennzahlen: grün stark, gelb mittel, rot schwach. Sie erscheint erst ab 3 Aktionen. Grün sind zum Beispiel Annahme-Ø ab 2,2, Angriffs-Punktquote ab 35 % und Fehlerquoten bis 10 %.</p></details>
  <details><summary>Laptop-Modus: Erfassen mit der Tastatur</summary>
  <p>Auf einem Laptop ohne Touch schaltet sich der Tastatur-Modus von selbst ein (oder unter ⚙ → Laptop-Modus). Die Hände bleiben dabei auf der Tastatur: <b>links Bereich und Bewertung, rechts der Spieler.</b> Auf jedem Feld stehen die Zifferntasten klein in der Ecke, in jeder Spielerzeile die Spielertaste.</p>
@@ -332,51 +336,124 @@ function pmCard(ev,rows){
  return `<div class="card"><h2>Plus/Minus und Effizienz</h2><div class="mu" style="margin-bottom:6px">Plus: direkte Punkte (Angriff, Block, Ass). Minus: eigene Fehler. Effizienz bei Angriff und Aufschlag: (Punkte − Fehler) ÷ Aktionen. Annahme: Ø-Note in Prozent von 3.</div>${line('<b>Team</b>',T,Math.max(1,T.plus,T.minus),true)}${rows.map(x=>line(pn(x.id),x.d,mx,false)).join('')}</div>`;
 }
 const imgHtml=()=>IMG.url?`<img src="${IMG.url}" alt="Auswertung"><a class="dl" href="${IMG.url}" download="volleyball-auswertung.png">Bild herunterladen</a><div class="mu" style="margin-top:6px">Am Handy: Bild gedrückt halten, dann speichern oder teilen.</div>`:'';
-async function makeReport(withLogo){
+// ---------- Auswertungsblatt (A4 quer): Anzeige und Bild ----------
+// Das Blatt ist eine SVG-Zeichnung. Alle Texte werden vor dem Zeichnen gemessen und passen sich der Kästchenbreite an, damit nichts überläuft.
+const FAM="system-ui,-apple-system,'Segoe UI',Roboto,sans-serif",MC=document.createElement('canvas').getContext('2d');
+const SCOL={g:'#1f7a4d',w:'#b7791f',b:'#c0392b',n:'#2f5d8a','':'#e4e1d8'},RCOL={MB:'#2f5d8a',AA:'#1f7a4d',DI:'#a8571a',ZP:'#7b4fa3',LI:'#5b6770'};
+const xe=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const r1=v=>Math.round(v*10)/10;
+function rallies(sets){   // jeder Ballwechsel mit Aufschlagrecht, Läufer und Ausgang (Korrekturen zählen nicht)
+ const R=[];
+ sets.forEach(s=>{let srv=s.serve==='Aufschlag'?'us':'opp';
+  for(const e of s.ev){const p=ptOf(e.c,e.r);
+   if(p){R.push({srv,rot:e.rot,won:p==='u'});srv=p==='u'?'us':'opp'}
+   else if(e.c==='sc'&&e.r==='sv')srv=srv==='us'?'opp':'us'}});
+ return R;
+}
+function sheetData(){
  const sets=S.sets.filter(s=>fSet==='all'||fSet==='s:'+s.id||fSet==='g:'+s.gid);
  let ev=[];sets.forEach(s=>{ev=ev.concat(s.ev)});
- const ids=[...new Set(ev.map(e=>e.p).filter(Boolean))];
- const rows=ids.map(id=>({p:S.players.find(p=>p.id===id)||{name:'?',nr:'',role:''},d:pm(ev,id)})).filter(x=>x.d.plus+x.d.minus+x.d.aN+x.d.sN+x.d.rN>0).sort((a,b)=>b.d.saldo-a.d.saldo||(Number(a.p.nr)||0)-(Number(b.p.nr)||0));
+ const nn=p=>Number(p.nr)||0;
+ const rows=[...new Set(ev.map(e=>e.p).filter(Boolean))].map(id=>{const p=S.players.find(x=>x.id===id)||{id,name:'?',nr:'',role:''};return{id,p,role:sets.length===1?eRole(sets[0],p):p.role,d:pm(ev,id),u:sets.map(s=>pm(s.ev,id))}})
+  .filter(x=>x.d.plus+x.d.minus+x.d.aN+x.d.sN+x.d.rN>0).sort((a,b)=>nn(a.p)-nn(b.p)||String(a.p.name).localeCompare(String(b.p.name)));
  if(!rows.length)return null;
- const T=pm(ev,null),one=fSet[0]==='s'?S.sets.find(s=>s.id===fSet.slice(2)):null,g=fSet[0]==='g'?S.games.find(x=>x.id===fSet.slice(2)):one?S.games.find(x=>x.id===one.gid):null;
- const res=sets.map(s=>{const q=replay(s);return{n:nrOf(s),u:q.u,o:q.o}}),pu=res.reduce((a,x)=>a+x.u,0),po=res.reduce((a,x)=>a+x.o,0);
- const W=1080,M=48,RH=66,H=520+rows.length*RH+130,cv=document.createElement('canvas');cv.width=W;cv.height=H;
- const c=cv.getContext('2d'),F='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',CL={g:'#1f7a4d',w:'#b7791f',b:'#c0392b',n:'#2f5d8a','':'#9aa3ad'},RC={MB:'#2f5d8a',AA:'#1f7a4d',DI:'#a8571a',ZP:'#7b4fa3',LI:'#5b6770'};
- const rr=(x,y,w,h,r,f)=>{c.beginPath();if(c.roundRect)c.roundRect(x,y,w,h,r);else c.rect(x,y,w,h);c.fillStyle=f;c.fill()};
- const tx=(s,x,y,font,col,al)=>{c.font=font;c.fillStyle=col;c.textAlign=al||'left';c.textBaseline='middle';c.fillText(s,x,y)};
- const fit=(s,w,font)=>{c.font=font;if(c.measureText(s).width<=w)return s;while(s.length>1&&c.measureText(s+'…').width>w)s=s.slice(0,-1);return s+'…'};
- rr(0,0,W,H,0,'#ffffff');rr(0,0,W,236,0,'#17202a');
- let drawn=false;
- if(withLogo&&LOGO.url){const im=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=LOGO.url});if(im){const h=150,w=Math.min(300,im.naturalWidth*h/im.naturalHeight);c.drawImage(im,W-M-w,43,w,h);drawn=true}}
- if(!drawn){const cx=W-M-75,cy=118;c.save();c.beginPath();c.arc(cx,cy,72,0,7);c.clip();c.fillStyle='#1f5fbf';c.fillRect(cx-72,cy-72,144,144);c.fillStyle='#f5c518';
-  c.beginPath();c.moveTo(cx-80,cy-30);c.bezierCurveTo(cx-40,cy-70,cx+10,cy-20,cx+80,cy-35);c.lineTo(cx+80,cy+5);c.bezierCurveTo(cx+30,cy+15,cx-10,cy-5,cx-80,cy+8);c.fill();
-  c.beginPath();c.moveTo(cx-40,cy+80);c.bezierCurveTo(cx-20,cy+30,cx+30,cy+30,cx+80,cy+60);c.lineTo(cx+80,cy+80);c.fill();c.restore();c.strokeStyle='#fff';c.lineWidth=4;c.beginPath();c.arc(cx,cy,72,0,7);c.stroke()}
- tx(fit(g?g.opp:'Alle Spiele',680,'bold 62px '+F),M,92,'bold 62px '+F,'#ffffff');
- tx((g?g.date.split('-').reverse().join('.')+' · '+(one?'Satz '+nrOf(one):'Gesamtes Spiel'):sets.length+(sets.length===1?' Satz':' Sätze')),M,150,'30px '+F,'#c9d1d9');
- const sw=res.filter(x=>x.u>x.o).length,sl=res.filter(x=>x.u<x.o).length;
- tx(fit(res.length>1?res.map(x=>'Satz '+x.n+'  '+x.u+':'+x.o).join('     '):one?pu+' : '+po:'',940,'bold 32px '+F),M,200,'bold 32px '+F,'#f5c518');
- const kp=[['Punkte',pu+' : '+po,pu>po?'g':pu<po?'b':'w',res.length>1?sw+' : '+sl+' Sätze':'Wir : Gegner'],['Annahme positiv',pctS(T.rPos),grd(T.rPos,T.rN,.7,.5),T.rAvg===null?'':'Ø '+T.rAvg.toFixed(1)+' von 3'],['Angriff-Effizienz',pctS(T.aEff),grd(T.aEff,T.aN,.25,.05),T.aN+' Angriffe · '+T.blk+' Block'],['Aufschlag-Effizienz',pctS(T.sEff),grd(T.sEff,T.sN,0,-.15),T.ace+' Asse · '+T.sN+' Aufschl.']];
- const bw=(W-2*M-3*16)/4;
- kp.forEach((k,i)=>{const x=M+i*(bw+16);rr(x,264,bw,150,16,'#f3f1ec');tx(k[0],x+18,292,'600 22px '+F,'#5b6770');tx(k[1],x+18,345,'bold 54px '+F,CL[k[2]]);tx(fit(k[3],bw-30,'20px '+F),x+18,390,'20px '+F,'#5b6770')});
- const hy=458;[['SPIELER',M,'left'],['PLUS / MINUS',440,'center'],['SALDO',630,'center'],['ANGRIFF',745,'center'],['AUFSCHLAG',860,'center'],['ANNAHME',975,'center']].forEach(h=>tx(h[0],h[1],hy,'600 17px '+F,'#8a94a0',h[2]));
- const mx=Math.max(1,...rows.map(x=>Math.max(x.d.plus,x.d.minus)));
- rows.forEach((r,i)=>{
-  const y=486+i*RH,my=y+RH/2,gr=pmGrades(r.d);
-  if(i%2===0)rr(M-16,y,W-2*M+32,RH,10,'#f7f6f2');
-  if(r.p.role){rr(M,my-15,46,30,6,RC[r.p.role]||'#5b6770');tx(r.p.role,M+23,my+1,'bold 18px '+F,'#fff','center')}
-  tx(fit('#'+r.p.nr+' '+r.p.name,r.p.role?190:240,'bold 28px '+F),M+(r.p.role?58:0),my,'bold 28px '+F,'#17202a');
-  const hw=84,mw=hw*r.d.minus/mx;rr(440-hw,my-11,hw*2,22,4,'#eceae4');if(mw>0)rr(440-mw,my-11,mw,22,4,'#c0392b');if(r.d.plus)rr(440,my-11,hw*r.d.plus/mx,22,4,'#1f7a4d');
-  tx(r.d.minus?'−'+r.d.minus:'',440-hw-8,my,'20px '+F,'#5b6770','right');tx(r.d.plus?'+'+r.d.plus:'',440+hw+8,my,'20px '+F,'#5b6770','left');
-  [[630,sgn(r.d.saldo),gr.s],[745,pctS(r.d.aEff),gr.a],[860,pctS(r.d.sEff),gr.v],[975,pctS(r.d.rEff),gr.r]].forEach(p=>{rr(p[0]-50,my-20,100,40,10,CL[p[2]]);tx(p[1],p[0],my+1,'bold 24px '+F,'#fff','center')});
- });
- const ly=486+rows.length*RH+22;
- tx('Plus = direkte Punkte (Angriff, Block, Ass) · Minus = eigene Fehler · Saldo = Plus − Minus',M,ly,'20px '+F,'#8a94a0');
- tx('Angriff/Aufschlag: (Punkte − Fehler) ÷ Aktionen · Annahme: Ø-Note in % von 3 · Farben ab 3 Aktionen',M,ly+30,'20px '+F,'#8a94a0');
- tx('Volleyball Tracker · '+new Date().toLocaleDateString('de-DE'),M,H-30,'600 22px '+F,'#5b6770');
+ const one=fSet[0]==='s'?sets[0]:null,g=fSet[0]==='g'?S.games.find(x=>x.id===fSet.slice(2)):one?S.games.find(x=>x.id===one.gid):null;
+ const res=sets.map(s=>{const q=replay(s);return{n:nrOf(s),u:q.u,o:q.o}});
+ const k=fSet==='all'||sets.length>5?0:sets.length,sg=k===1?0:1;
+ const rc=evs=>['err','bad','ok','perf'].map(r=>evs.filter(e=>e.c==='rec'&&e.r===r).length);
+ const ra=rallies(sets),so=[1,2,3,4,5,6].map(r=>{const a=ra.filter(x=>x.rot===r&&x.srv==='opp'),b=ra.filter(x=>x.rot===r&&x.srv==='us');return{r,n:a.length,w:a.filter(x=>x.won).length,bn:b.length,bw:b.filter(x=>x.won).length}});
+ return{sets,rows,k,sg,T:pm(ev,null),Ts:sets.map(s=>pm(s.ev,null)),res,pu:res.reduce((a,x)=>a+x.u,0),po:res.reduce((a,x)=>a+x.o,0),so,
+  title:g?g.opp:'Alle Spiele',sub:g?g.date.split('-').reverse().join('.')+' · '+(one?'Satz '+nrOf(one):'Gesamtes Spiel'):sets.length+(sets.length===1?' Satz':' Sätze'),
+  rec:rc(ev),recS:k>=2?sets.map(s=>rc(s.ev)):[]};
+}
+function sheetSvg(d,o){
+ const W=1123,X=28,CW=W-2*X,out=[];
+ const fit=(s,size,wt,mw)=>{s=String(s);let f=size;MC.font=`${wt} ${f}px ${FAM}`;const w=MC.measureText(s).width;
+  if(mw&&w>mw){f=Math.max(8,size*mw/w);MC.font=`${wt} ${f}px ${FAM}`;if(MC.measureText(s).width>mw){while(s.length>1&&MC.measureText(s+'…').width>mw)s=s.slice(0,-1);s+='…'}}
+  return{s,f}};
+ const R=(x,y,w,h,f,r)=>{if(w>0)out.push(`<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="${r||0}" fill="${f}"/>`)};
+ const T=(s,x,y,size,wt,fill,an,mw)=>{const t=fit(s,size,wt,mw);out.push(`<text x="${r1(x)}" y="${r1(y)}" font-size="${r1(t.f)}" font-weight="${wt}" fill="${fill}" text-anchor="${an||'start'}" dominant-baseline="central">${xe(t.s)}</text>`)};
+ const pill=(txt,gr,cx,my,w)=>{R(cx-w/2+2,my-9,w-4,18,SCOL[gr||''],5);T(txt,cx,my,12,'700',gr?'#fff':'#17202a','middle',w-8)};
+ // Kopf
+ const ball=(cx,cy)=>`<g transform="translate(${cx},${cy}) scale(.4167)"><clipPath id="bc"><circle r="72"/></clipPath><g clip-path="url(#bc)"><rect x="-72" y="-72" width="144" height="144" fill="#1f5fbf"/><path fill="#f5c518" d="M-80,-30C-40,-70 10,-20 80,-35L80,5C30,15 -10,-5 -80,8Z"/><path fill="#f5c518" d="M-40,80C-20,30 30,30 80,60L80,80Z"/></g><circle r="72" fill="none" stroke="#fff" stroke-width="4"/></g>`;
+ R(0,0,W,86,'#17202a');
+ T(d.title,X,34,28,'700','#ffffff','start',620);T(d.sub,X,63,15,'400','#c9d1d9','start',620);
+ const sw=d.res.filter(x=>x.u>x.o).length,sl=d.res.filter(x=>x.u<x.o).length;
+ T((d.res.length>1?'Sätze '+sw+' : '+sl+'  ·  ':'')+'Punkte '+d.pu+' : '+d.po,960,34,24,'700','#f5c518','end',330);
+ if(d.res.length>1&&d.k>0)T(d.res.map(x=>'S'+x.n+' '+x.u+':'+x.o).join('   '),960,63,13,'400','#c9d1d9','end',330);
+ if(o.logo)out.push(`<image href="${xe(o.logo)}" x="${W-X-150}" y="13" width="150" height="60" preserveAspectRatio="xMaxYMid meet"/>`);
+ else if(o.ball)out.push(ball(W-X-32,43));
+ // Tabelle
+ const uc=d.k+d.sg,gp=6,pw0=196,eW0=64,nW0=44,sW0=60,RH=Math.max(24,Math.min(34,Math.floor((794-100-44-4-22-214-50)/(d.rows.length+1))));
+ let cw=Math.min(56,(CW-pw0-3*eW0-2*nW0-sW0-5*gp)/(3*uc)),extra=CW-(pw0+3*uc*cw+3*eW0+2*nW0+sW0+5*gp);
+ const pw=pw0+Math.min(extra*.35,100);extra-=pw-pw0;const f=1+extra/(3*eW0+2*nW0+sW0),eW=eW0*f,nW=nW0*f,sW=sW0*f;
+ const gx=[];let x=X+pw+gp;for(let g=0;g<3;g++){gx.push(x);x+=uc*cw+gp}
+ const ex=x,mx=ex+3*eW+gp,y0=100,ys=y0+44;
+ T('Spieler',X+6,y0+10,12,'700','#5b6770','start',pw-8);
+ [[gx[0],uc*cw,'Annahme'],[gx[1],uc*cw,'Angriff'],[gx[2],uc*cw,'Aufschlag'],[ex,3*eW,'Effizienz'],[mx,2*nW+sW,'Plus / Minus']].forEach(g=>{R(g[0],y0,g[1],20,'#17202a',5);T(g[2],g[0]+g[1]/2,y0+10.5,12,'700','#ffffff','middle',g[1]-6)});
+ for(let g=0;g<3;g++)for(let j=0;j<uc;j++)T(j<d.k?'S'+d.res[j].n:'Σ',gx[g]+j*cw+cw/2,y0+32,11,'700','#5b6770','middle',cw-2);
+ ['Annahme','Angriff','Aufschlag'].forEach((l,i)=>T(l,ex+i*eW+eW/2,y0+32,11,'700','#5b6770','middle',eW-4));
+ [['+',nW],['−',nW],['Saldo',sW]].forEach((l,i)=>T(l[0],mx+(i<2?i*nW:2*nW)+l[1]/2,y0+32,11,'700','#5b6770','middle',l[1]-4));
+ const KEY=['rN','aN','sN'];
+ const draw=(label,dd,u,my,team,role)=>{
+  const gr=pmGrades(dd);
+  if(role){R(X+4,my-8,28,16,RCOL[role]||'#5b6770',4);T(role,X+18,my+.5,10,'700','#ffffff','middle',24);T(label,X+38,my,13,team?'700':'600','#17202a','start',pw-42)}
+  else T(label,X+6,my,13,'700','#17202a','start',pw-10);
+  for(let g=0;g<3;g++)for(let j=0;j<uc;j++){const tot=j>=d.k,v=tot?dd[KEY[g]]:u[j][KEY[g]];T(v?v:'–',gx[g]+j*cw+cw/2,my,tot?13:12,tot?'700':v?'600':'400',v?'#17202a':'#b8bec6','middle',cw-3)}
+  pill(pctS(dd.rEff),gr.r,ex+eW/2,my,eW);pill(pctS(dd.aEff),gr.a,ex+1.5*eW,my,eW);pill(pctS(dd.sEff),gr.v,ex+2.5*eW,my,eW);
+  T(dd.plus?'+'+dd.plus:'–',mx+nW/2,my,13,'700',dd.plus?'#1f7a4d':'#b8bec6','middle',nW-4);
+  T(dd.minus?'−'+dd.minus:'–',mx+1.5*nW,my,13,'700',dd.minus?'#c0392b':'#b8bec6','middle',nW-4);
+  pill(sgn(dd.saldo),gr.s,mx+2*nW+sW/2,my,sW);
+ };
+ d.rows.forEach((r,i)=>{const ry=ys+i*RH;if(i%2)R(X-4,ry,CW+8,RH,'#f6f5f0',4);draw('#'+r.p.nr+' '+r.p.name,r.d,r.u,ry+RH/2,false,r.role)});
+ const ty=ys+d.rows.length*RH+4;R(X-4,ty,CW+8,RH+4,'#e9e6de',6);draw('Team',d.T,d.Ts,ty+RH/2+2,true,'');
+ // Teamauswertung
+ const by=ty+RH+22,bh=214,bw=(CW-24)/3,bx=i=>X+i*(bw+12),LB=[['Fehler','b'],['Schlecht','w'],['Gut','n'],['Perfekt','g']];
+ for(let i=0;i<3;i++)R(bx(i),by,bw,bh,'#f3f1ec',10);
+ const stack=(cnt,x,y,w,h,fs)=>{const n=cnt.reduce((a,b)=>a+b,0);let cx=x;cnt.forEach((c,i)=>{const sw2=n?w*c/n:0;R(cx,y,sw2,h,SCOL[LB[i][1]],0);if(c&&sw2>=fs*2)T(c,cx+sw2/2,y+h/2+.5,fs,'700','#ffffff','middle',sw2-2);cx+=sw2});if(!n)R(x,y,w,h,'#e4e1d8',0)};
+ // 1) Annahme-Verteilung
+ {const x0=bx(0)+14,iw=bw-28,n=d.rec.reduce((a,b)=>a+b,0);
+  T('Annahme-Verteilung (Team)',x0,by+20,13,'700','#17202a','start',iw);
+  if(!n)T('Keine Annahmen erfasst',x0,by+50,12,'400','#6b7280','start',iw);
+  else{stack(d.rec,x0,by+34,iw,22,11);
+   LB.forEach((l,i)=>{const lx=x0+(i%2)*iw/2,ly=by+74+Math.floor(i/2)*17;R(lx,ly-4,8,8,SCOL[l[1]],2);T(l[0]+' '+d.rec[i]+' ('+Math.round(100*d.rec[i]/n)+'%)',lx+13,ly,11,'400','#17202a','start',iw/2-16)});
+   if(d.recS.length){T('je Satz',x0,by+112,10,'700','#6b7280','start',iw);d.recS.forEach((c,j)=>{const ly=by+127+j*16;T('S'+d.res[j].n,x0,ly+.5,10,'700','#5b6770','start',22);stack(c,x0+24,ly-6,iw-24,12,9)})}}}
+ // 2) Angriffsverteilung
+ {const x0=bx(1)+14,iw=bw-28,tot=d.rows.reduce((a,r)=>a+r.d.aN,0),L=d.rows.filter(r=>r.d.aN).sort((a,b)=>b.d.aN-a.d.aN||(Number(a.p.nr)||0)-(Number(b.p.nr)||0)),show=L.length>8?7:L.length,mxA=Math.max(1,...L.map(r=>r.d.aN));
+  T('Angriffsverteilung (ohne Block)',x0,by+20,13,'700','#17202a','start',iw);
+  if(!tot)T('Keine Angriffe erfasst',x0,by+50,12,'400','#6b7280','start',iw);
+  L.slice(0,show).forEach((r,i)=>{const ly=by+42+i*21;T('#'+r.p.nr+' '+r.p.name,x0,ly,11.5,'600','#17202a','start',118);R(x0+124,ly-7,Math.max(2,(iw-124-62)*r.d.aN/mxA),14,SCOL.n,3);T(r.d.aN+' · '+Math.round(100*r.d.aN/tot)+'%',x0+iw,ly,11,'600','#17202a','end',58)});
+  if(L.length>show)T('+ '+(L.length-show)+' weitere',x0,by+42+show*21,11,'400','#6b7280','start',iw)}
+ // 3) Sideout je Läufer
+ {const x0=bx(2)+14,iw=bw-28,sn=d.so.reduce((a,r)=>a+r.n,0),sw3=d.so.reduce((a,r)=>a+r.w,0);
+  T('Sideout-Quote je Läufer'+(sn?' · gesamt '+Math.round(100*sw3/sn)+'%':''),x0,by+20,13,'700','#17202a','start',iw);
+  T('Läufer',x0,by+40,10,'700','#6b7280','start',50);T('Sideout',x0+62,by+40,10,'700','#6b7280','start',60);T('Break',x0+iw,by+40,10,'700','#6b7280','end',44);
+  d.so.forEach((r,i)=>{const ly=by+62+i*26,q=r.n?r.w/r.n:null,gr=r.n>=3?(q>=.65?'g':q<.5?'b':'w'):'';
+   T('Läufer '+r.r,x0,ly,12,'600','#17202a','start',58);
+   R(x0+62,ly-7,110,14,'#e4e1d8',3);if(r.n)R(x0+62,ly-7,Math.max(2,110*q),14,gr?SCOL[gr]:'#9aa3ad',3);
+   T(r.n?Math.round(100*q)+'%  '+r.w+'/'+r.n:'–',x0+178,ly,11,'600','#17202a','start',iw-178-46);
+   T(r.bn?Math.round(100*r.bw/r.bn)+'%':'–',x0+iw,ly,11,'600','#17202a','end',44)})}
+ // Fuß
+ const H=Math.max(794,by+bh+50);
+ T('Zahlen = Aktionen je Satz (Σ = Summe) · Angriff ohne Block · Effizienz Angriff/Aufschlag: (Punkte − Fehler) ÷ Aktionen, Annahme: Ø-Note in % von 3 · Plus = direkte Punkte, Minus = eigene Fehler',X,H-34,10,'400','#8a94a0','start',CW);
+ T('Sideout = Punkt nach gegnerischem Aufschlag · Break = Punkt nach eigenem Aufschlag · Läufer = Position des Zuspielers · Farben ab 3 Aktionen',X,H-20,10,'400','#8a94a0','start',CW);
+ T('Volleyball Tracker · '+new Date().toLocaleDateString('de-DE'),X,H-7,10,'700','#5b6770','start',CW);
+ return `<svg xmlns="http://www.w3.org/2000/svg" class="sheet" viewBox="0 0 ${W} ${H}"${o.img?` width="${W}" height="${H}"`:' role="img" aria-label="Auswertungsblatt"'} font-family="${FAM}"><rect width="${W}" height="${H}" fill="#ffffff"/>${out.join('')}</svg>`;
+}
+async function makeReport(withLogo){
+ const d=sheetData();if(!d)return null;
+ let im=null;
+ if(withLogo&&LOGO.url)im=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=LOGO.url});
+ const svg=sheetSvg(d,{img:1,ball:!im}),m=svg.match(/viewBox="0 0 (\d+) (\d+)"/),W=+m[1],H=+m[2],K=2;
+ const pic=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('svg'));i.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)});
+ const cv=document.createElement('canvas');cv.width=W*K;cv.height=H*K;const c=cv.getContext('2d');
+ c.fillStyle='#fff';c.fillRect(0,0,cv.width,cv.height);c.drawImage(pic,0,0,cv.width,cv.height);
+ if(im){const h=60,w=im.naturalWidth&&im.naturalHeight?Math.min(150,im.naturalWidth*h/im.naturalHeight):h;c.drawImage(im,(1123-28-w)*K,13*K,w*K,h*K)}
  return cv;
 }
 async function shareImage(){
- let cv=await makeReport(true).catch(()=>null),blob=null;
+ let cv=null,blob=null;
+ try{cv=await makeReport(true)}catch(e){try{cv=await makeReport(false)}catch(e2){toast('Bild konnte nicht erstellt werden');return}}
  if(cv===null){toast('Keine Daten zum Teilen');return}
  const tb=x=>new Promise((res,rej)=>{try{x.toBlob(b=>b?res(b):rej(new Error('leer')),'image/png')}catch(e){rej(e)}});
  try{blob=await tb(cv)}catch(e){cv=await makeReport(false);blob=await tb(cv)}
@@ -387,7 +464,9 @@ async function shareImage(){
 function evalv(){
  const sets=S.sets;
  let ev=[];sets.forEach(s=>{if(fSet==='all'||fSet==='s:'+s.id||fSet==='g:'+s.gid)ev=ev.concat(s.ev)});
- let h=`<div class="card"><h2>Auswertung</h2><select data-sel="fset"><option value="all">Alle Spiele</option>${S.games.slice().reverse().map(g=>`<optgroup label="${gname(g)}"><option value="g:${g.id}" ${fSet==='g:'+g.id?'selected':''}>Gesamtes Spiel</option>${sets.filter(s=>s.gid===g.id).map(s=>`<option value="s:${s.id}" ${fSet==='s:'+s.id?'selected':''}>Satz ${nrOf(s)}</option>`).join('')}</optgroup>`).join('')}</select><button class="pri" data-act="shareimg" style="margin-top:10px">Als Bild teilen</button><div class="mu" style="margin-top:8px">Farben zeigen ab 3 Aktionen, ob ein Wert stark (grün), mittel (gelb) oder schwach (rot) ist.</div></div>`;
+ let h=`<div class="card"><h2>Auswertung</h2><select data-sel="fset"><option value="all">Alle Spiele</option>${S.games.slice().reverse().map(g=>`<optgroup label="${gname(g)}"><option value="g:${g.id}" ${fSet==='g:'+g.id?'selected':''}>Gesamtes Spiel</option>${sets.filter(s=>s.gid===g.id).map(s=>`<option value="s:${s.id}" ${fSet==='s:'+s.id?'selected':''}>Satz ${nrOf(s)}</option>`).join('')}</optgroup>`).join('')}</select><button class="pri" data-act="shareimg" style="margin-top:10px">Als Bild teilen</button><div class="mu" style="margin-top:8px">Farben zeigen ab 3 Aktionen, ob ein Wert stark (grün), mittel (gelb) oder schwach (rot) ist. Das Blatt passt am besten im Querformat (⟳) oder du wischst seitlich.</div></div>`;
+ const sd=sheetData();if(sd)h+=`<div class="sheetwrap"><div class="sheetbox">${sheetSvg(sd,{logo:LOGO.url,ball:!LOGO.url})}</div></div>`;
+ let dtl='';
  const ids=[...new Set(ev.map(e=>e.p))];
  if(!ids.length)return h+`<div class="card mu">Noch keine Daten.</div>`+manageHtml();
  const cn=(c,r)=>ev.filter(e=>e.c===c&&e.r===r).length;
@@ -395,21 +474,21 @@ function evalv(){
  const pu=cn('att','pt')+cn('att','blk')+cn('srv','ace')+cn('sc','oerr')+sw,po=cn('rec','err')+cn('att','err')+cn('srv','err')+sg;
  if(pu+po){
   const fs=sets.filter(s=>fSet==='all'||fSet==='s:'+s.id||fSet==='g:'+s.gid);
-  h+=`<div class="card"><h2>Punkte</h2><div class="leg"><span><i class="g"></i>Wir</span><span><i class="b"></i>Gegner</span></div>
+  dtl+=`<div class="card"><h2>Punkte</h2><div class="leg"><span><i class="g"></i>Wir</span><span><i class="b"></i>Gegner</span></div>
   <div class="bar">${pu?`<span class="sg g" style="flex:${pu}">${pu}</span>`:''}${po?`<span class="sg b" style="flex:${po}">${po}</span>`:''}</div>
   <div class="st"><b>Wir:</b> Angriff ${cn('att','pt')} · Block ${cn('att','blk')} · Ass ${cn('srv','ace')} · Gegnerfehler ${cn('sc','oerr')} · Sonstige ${sw}</div>
   <div class="st"><b>Gegner:</b> Annahmefehler ${cn('rec','err')} · Angriffsfehler ${cn('att','err')} · Aufschlagfehler ${cn('srv','err')} · Sonstige ${sg}</div>
   ${fs.map(s=>{const r=replay(s);return `<div class="st"><b>${esc(s.opp)}, Satz ${nrOf(s)}</b> <span class="mu">${s.date.split('-').reverse().join('.')}</span><b class="num" style="float:right">${r.u} : ${r.o}</b></div>`}).join('')}</div>`;
  }
  {const rowsPM=ids.filter(Boolean).map(id=>({id,d:pm(ev,id)})).filter(x=>x.d.plus+x.d.minus+x.d.aN+x.d.sN+x.d.rN>0).sort((a,b)=>b.d.saldo-a.d.saldo||(Number((S.players.find(p=>p.id===a.id)||{}).nr)||0)-(Number((S.players.find(p=>p.id===b.id)||{}).nr)||0));
-  if(rowsPM.length)h+=pmCard(ev,rowsPM)}
+  if(rowsPM.length)dtl+=pmCard(ev,rowsPM)}
  for(const c of ['rec','att','srv']){
   const o=CATS[c],team=calc(c,ev);
   if(!team.tot)continue;
   const list=ids.map(id=>({id,d:calc(c,ev.filter(e=>e.p===id))})).filter(x=>x.d.tot).sort((x,y)=>y.d.key-x.d.key);
-  h+=`<div class="card"><h2>${o.n}</h2><div class="leg">${o.b.map(([r,l,k])=>`<span><i class="${k}"></i>${l}</span>`).join('')}</div>${erow(c,'<b>Team</b>',team,1)}${list.map(x=>erow(c,pn(x.id),x.d)).join('')}</div>`;
+  dtl+=`<div class="card"><h2>${o.n}</h2><div class="leg">${o.b.map(([r,l,k])=>`<span><i class="${k}"></i>${l}</span>`).join('')}</div>${erow(c,'<b>Team</b>',team,1)}${list.map(x=>erow(c,pn(x.id),x.d)).join('')}</div>`;
  }
- return h+manageHtml();
+ return h+(dtl?`<details class="evd" ${evOpen?'open':''}><summary>Weitere Auswertungen (Punkte, Plus/Minus, Annahme, Angriff, Aufschlag)</summary>${dtl}</details>`:'')+manageHtml();
 }
 function manageHtml(){
  if(!S.games.length)return '';
@@ -652,6 +731,7 @@ async function unlock(){
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='pin')unlock()});
 const tg=(a,v)=>{const i=a.indexOf(v);i<0?a.push(v):a.splice(i,1)};
 document.addEventListener('input',e=>{const k=e.target.dataset.in;if(k&&D)D[k]=e.target.value});
+document.addEventListener('toggle',e=>{if(e.target.classList&&e.target.classList.contains('evd'))evOpen=e.target.open},true);
 document.addEventListener('change',e=>{const k=e.target.dataset.sel;if(k==='fset'){fSet=e.target.value;render()}else if(k==='gid'&&D){D.gid=e.target.value;if(D.gid!=='new'){D.act=lastAct(D.gid);D.pos=fixPos(D.act,lastPos(D.gid));D.serve=nextServe(D.gid);D.rl=lastRl(D.gid)}render()}else if(k==='pos'&&D){const i=+e.target.dataset.i,v=e.target.value,j=v?D.pos.indexOf(v):-1;if(j>=0)D.pos[j]=D.pos[i];D.pos[i]=v;render()}else if(k==='lap'){LAPPREF=e.target.value||null;try{if(LAPPREF)localStorage.setItem('vblaptop',LAPPREF);else localStorage.removeItem('vblaptop')}catch(x){}view();render()}else if(k==='rl'&&D){D.rl[e.target.dataset.v]=e.target.value;render()}else if(k==='wrl'){const s=curSet();if(s){const rl={...(s.rl||{})};rl[e.target.dataset.v]=e.target.value;upd(s,{rl});render()}}else if(k==='prole'){op({k:'p~',id:e.target.dataset.v,role:e.target.value});render()}else if(k==='wpos'){const s=curSet();if(s){setPos(s,+e.target.dataset.i,e.target.value);render()}}});
 document.addEventListener('click',e=>{
  if(e.target.id==='ov'){modal=false;render();return}
