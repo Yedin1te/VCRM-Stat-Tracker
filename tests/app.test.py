@@ -511,9 +511,9 @@ def _(pg):
     assert im1.tobytes() != im2.tobytes(), 'Satz 2 und das ganze Spiel müssen verschieden aussehen'
     assert pg.evaluate('sheetData().rows.length') == 3 and pg.evaluate('sheetData().k') == 1 or True
     tap(pg, '[data-act=gearx]'); pg.locator('[data-sel=fset]').select_option('s:s2'); pg.wait_for_timeout(150)
-    assert pg.evaluate('sheetData().rows.length') == 1 and pg.evaluate('sheetData().sg') == 0
+    assert pg.evaluate('sheetData().rows.length') == 1
     pg.locator('[data-sel=fset]').select_option('g:g1'); pg.wait_for_timeout(150)
-    assert pg.evaluate('sheetData().rows.length') == 3 and pg.evaluate('sheetData().k') == 2 and pg.evaluate('sheetData().sg') == 1
+    assert pg.evaluate('sheetData().rows.length') == 3 and pg.evaluate('sheetData().k') == 2
 
 
 def two_set_state():
@@ -523,20 +523,19 @@ def open_eval(pg, st, fset=None):
     if fset: pg.locator('[data-sel=fset]').select_option(fset); pg.wait_for_timeout(200)
 def svg_text(pg): return pg.evaluate("document.querySelector('svg.sheet').textContent")
 
-@check('Auswertungsblatt: Anzahl je Satz, Summe, Effizienz und Plus/Minus in einer Tabelle', desktop=True)
+@check('Auswertungsblatt: Tabelle zeigt die Anzahl je Bewertung, Effizienz und Plus/Minus', desktop=True)
 def _(pg):
     open_eval(pg, two_set_state(), 'g:g1')
-    sd = pg.evaluate('(()=>{const d=sheetData(),r=d.rows.find(x=>x.id==="p1");return{k:d.k,sg:d.sg,u:r.u.map(x=>[x.rN,x.aN,x.sN]),tot:[r.d.rN,r.d.aN,r.d.sN],names:d.rows.map(x=>x.id)}})()')
-    assert sd['k'] == 2 and sd['sg'] == 1 and sd['names'] == ['p1', 'p2', 'p3'], sd
-    assert sd['u'] == [[5, 8, 5], [1, 2, 0]] and sd['tot'] == [6, 10, 5], sd           # Satz 1, Satz 2, Summe
+    sd = pg.evaluate('(()=>{const d=sheetData(),r=d.rows.find(x=>x.id==="p1");return{c:r.c,t:d.cT,names:d.rows.map(x=>x.id)}})()')
+    assert sd['names'] == ['p1', 'p2', 'p3'], sd
+    assert sd['c']['att'] == [1, 2, 2, 5, 1] and sd['c']['rec'] == [1, 1, 1, 3] and sd['c']['srv'][3] == 1, sd['c']          # Fehler, ohne Wirkung, Wirkung, Punkt, Block
+    assert sum(sd['t']['att']) >= sum(sd['c']['att']) and len(sd['t']['rec']) == 4 and len(sd['t']['srv']) == 4, sd['t']
     txt = svg_text(pg)
-    for w in ['Annahme', 'Angriff', 'Aufschlag', 'Effizienz', 'Plus / Minus', 'Saldo', 'S1', 'S2', 'Σ', 'Team', 'Annahme-Verteilung', 'Angriffsverteilung', 'Sideout-Quote je Läufer', 'Gegner']:
+    for w in ['Annahme', 'Angriff', 'Aufschlag', 'Effizienz', 'Plus / Minus', 'Saldo', 'Fehl.', 'Schl.', 'Gut', 'Perf.', 'Ohne W.', 'Wirk.', 'Punkt', 'Block', 'Ass', 'Team', 'Annahme-Verteilung', 'Angriffsverteilung', 'Sideout-Quote je Läufer', 'Gegner']:
         assert w in txt, w
     assert pg.locator('svg.sheet').count() == 1 and not pg.errs
-    pg.locator('[data-sel=fset]').select_option('s:s1'); pg.wait_for_timeout(200)
-    assert pg.evaluate('sheetData().sg') == 0 and 'S1' in svg_text(pg) and 'S2' not in svg_text(pg), 'bei einem Satz gibt es keine Summenspalte'
-    pg.locator('[data-sel=fset]').select_option('all'); pg.wait_for_timeout(200)
-    assert pg.evaluate('[sheetData().k,sheetData().sg]') == [0, 1] and 'S1' not in svg_text(pg), 'bei „Alle Spiele“ nur Summen'
+    pg.locator('[data-sel=fset]').select_option('s:s2'); pg.wait_for_timeout(200)
+    assert pg.evaluate('sheetData().rows.find(x=>x.id==="p1").c.att') == [0, 0, 0, 2, 0], 'ein Satz zeigt nur dessen Bewertungen'
 
 @check('Auswertungsblatt: Sideout- und Break-Quote je Läufer werden aus den Ballwechseln berechnet', desktop=True)
 def _(pg):
@@ -546,10 +545,24 @@ def _(pg):
         E(6, '', 'sc', 'wp', 6)]                                                                          # Korrektur zählt nicht als Ballwechsel
     open_eval(pg, state(sets=[s]), 'g:g1')
     so = pg.evaluate('sheetData().so')
-    assert (so[0]['n'], so[0]['w'], so[0]['bn']) == (1, 1, 0), so[0]
+    assert (so[0]['n'], so[0]['w'], so[0]['f'], so[0]['bn']) == (1, 1, 1, 0), so[0]
     assert (so[5]['n'], so[5]['w'], so[5]['bn'], so[5]['bw']) == (1, 0, 2, 1), so[5]
     assert sum(x['n'] + x['bn'] for x in so) == 4, so
     assert 'Läufer 1' in svg_text(pg) and '1/1' in svg_text(pg)
+
+
+@check('Auswertungsblatt: 1st-Ball-Sideout zählt nur den Punkt mit dem ersten Angriff nach der Annahme', desktop=True)
+def _(pg):
+    E = lambda i, p, c, r, rot_: {'id': f'y{i}', 'p': p, 'c': c, 'r': r, 'rot': rot_, 't': i}
+    s = mkset(1, serve='Annahme'); s['ev'] = [E(1, 'p1', 'rec', 'ok', 1), E(2, 'p1', 'att', 'eff', 1), E(3, 'p1', 'att', 'pt', 1),   # gewonnen, aber nicht im ersten Angriff
+        E(4, 'p1', 'srv', 'err', 6),                                                                                                   # wir schlagen auf, Fehler
+        E(5, 'p1', 'rec', 'perf', 6), E(6, 'p1', 'att', 'pt', 6),                                                                      # 1st Ball
+        E(7, '', 'sc', 'opp', 5), E(8, 'p1', 'att', 'blk', 5)]                                                                         # Block-Punkt ist kein 1st Ball
+    open_eval(pg, state(sets=[s]), 'g:g1')
+    so = pg.evaluate('sheetData().so')
+    assert (so[0]['n'], so[0]['w'], so[0]['f']) == (1, 1, 0), so[0]
+    assert (so[5]['n'], so[5]['w'], so[5]['f']) == (1, 1, 1), so[5]
+    assert sum(x['f'] for x in so) == 1 and '1st Ball' in svg_text(pg)
 
 @check('Auswertungsblatt: alle Schriften bleiben in ihren Kästchen (lange Namen, 5 Sätze, 14 Spieler)', desktop=True)
 def _(pg):
