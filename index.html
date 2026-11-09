@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-a5R4qFv9RUkTgB7HGd5nwABxZqSYHlJygtrHgePYiBQ='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-xFNhkr7k+p5mBrVX/dC1HChHce+qHYpkbLyM+mlOi7o='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#17202a">
@@ -685,12 +685,12 @@ function bkHtml(){
  <button class="pri" data-act="restore" style="margin-top:8px">Wiederherstellen und hochladen</button>
  <div class="row" style="margin-top:8px"><button data-act="bkexp" style="flex:1">Als JSON kopieren</button><button data-act="bkdrop" style="flex:1">Verwerfen</button></div></div>`;
 }
-const NEEDVER=6;let lastWarn='',QUEUED=false;   // Mindestversion des Google-Skripts (Code.gs)
+const NEEDVER=6,MAXSEND=1000;let lastWarn='',QUEUED=false;   // Mindestversion des Google-Skripts (Code.gs)
 async function sync(){
  if(!CFG.url||busy||!UNL)return;
  if(!CFG.init&&!QUEUED&&(S.players.length||S.games.length||S.sets.length)){queueAll();QUEUED=true}   // erste Verbindung: lokale Daten zuerst hochladen, nie von einer leeren Tabelle überschreiben lassen
  busy=true;status='Synchronisiere...';ui();
- const ops=S.pend.slice();let ok=false;
+ const ops=S.pend.slice(0,MAXSEND);let ok=false;   // in Portionen senden, das Skript nimmt höchstens 5000 Operationen je Anfrage an
  try{
   const r=await fetch(CFG.url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({pw:CFG.pw,ops})});
   const d=await r.json();
