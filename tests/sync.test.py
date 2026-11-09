@@ -104,6 +104,23 @@ def t_connect(br):
     ctx.close()
 run('Sync: Verbinden mit leerer Tabelle behält und überträgt die lokalen Daten', t_connect)
 
+
+def t_bigqueue(br):
+    st = state(players=3); st['sets'] = []
+    for n in (1, 2):   # zwei Sätze, denn die App hält je Satz höchstens 5000 Ereignisse
+        s1 = mkset(n); s1['ev'] = [{'id': f'b{n}_{i}', 'p': 'p1', 'c': 'att', 'r': 'pt', 'rot': 1, 't': i} for i in range(3100)]; st['sets'].append(s1)
+    a = device(br, st); a.evaluate('pushAll()'); a.wait_for_timeout(500)
+    assert a.evaluate('S.pend.length') > 5000, a.evaluate('S.pend.length')
+    do_sync(a)
+    for _ in range(60):
+        if a.evaluate('S.pend.length') == 0 and not a.evaluate('busy'): break
+        a.wait_for_timeout(500)
+    assert a.evaluate('S.pend.length') == 0, ('Warteschlange wurde nicht abgearbeitet', a.evaluate('S.pend.length'), a.evaluate('status'))
+    assert 'Fehler' not in a.evaluate('status'), a.evaluate('status')
+    r = json.loads(post('/', json.dumps({'pw': SPW, 'ops': []}).encode()))
+    assert len(r['events']) == 6200 and r.get('skipped') == 0, (len(r.get('events', [])), r.get('error'))
+run('Sync: über 5000 offene Eingaben werden in Portionen gesendet („Zu viele Operationen“ tritt nicht mehr auf)', t_bigqueue)
+
 def t_conflict(br):
     st = state(players=7); st['players'][3]['role'] = 'ZP'
     a = device(br, st); a.evaluate('pushAll()'); a.wait_for_timeout(600); start_set(a, 'Annahme'); a.wait_for_timeout(1500); do_sync(a)
