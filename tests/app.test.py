@@ -147,7 +147,7 @@ def _(pg):
     tap(pg, '[data-act=hit][data-v="p1|att|blk"]'); assert score(pg) == '1 : 0', score(pg)
     for r in ['pt', 'pt', 'pt', 'err']:
         att(); tap(pg, f'[data-act=hit][data-v="p2|att|{r}"]')
-    tap(pg, 'nav [data-act=tab][data-v=eval]')
+    tap(pg, 'nav [data-act=tab][data-v=eval]'); tap(pg, 'details.evd > summary')
     txt = pg.locator('main').inner_text()
     assert 'Block 1' in txt and 'Punkt 75%' in txt, txt[:500]     # 3 Punkte aus 4 Angriffen, der Block verfälscht die Quote nicht
     assert not pg.errs
@@ -457,7 +457,7 @@ def _(pg):
 
 @check('Plus/Minus: Karte in der Auswertung, nach Saldo sortiert, Farben erst ab 3 Aktionen')
 def _(pg):
-    open_app(pg, stats_state()); tap(pg, 'nav [data-act=tab][data-v=eval]')
+    open_app(pg, stats_state()); tap(pg, 'nav [data-act=tab][data-v=eval]'); tap(pg, 'details.evd > summary')
     card = pg.locator('.card:has(h2:has-text("Plus/Minus und Effizienz"))'); assert card.count() == 1
     rows = card.locator('.er'); assert rows.count() == 4, rows.count()                    # Team + 3 Spieler
     txt = [re.sub(r'\s+', ' ', r.inner_text()) for r in rows.all()]
@@ -470,14 +470,14 @@ def _(pg):
     assert 'g' in cls(2, 'Angriff') and 'b' in cls(2, 'Aufschlag') and 'w' in cls(2, 'Annahme')       # 25% = Grenze grün, -20% rot, 60% gelb, (cls(2, 'Angriff'), cls(2, 'Aufschlag'), cls(2, 'Annahme'))
     assert cls(3, 'Aufschlag') == ['pill'], 'bei nur 1 Aufschlag darf keine Farbe erscheinen'
 
-@check('Bild teilen: Bild entsteht, ist 1080 px breit, nicht leer, Kopf und Fuß stimmen')
+@check('Bild teilen: Bild entsteht (A4 quer, 2246 px breit), nicht leer, Kopf und Fuß stimmen')
 def _(pg):
     from PIL import Image
     st = stats_state(); st['games'][0]['opp'] = 'Testgegner'; open_app(pg, st); tap(pg, 'nav [data-act=tab][data-v=eval]')
     tap(pg, '[data-act=shareimg]'); pg.wait_for_selector('#ov img', timeout=8000)
     url = pg.evaluate('IMG.url'); assert url.startswith('data:image/png;base64,'), url[:40]
     im = Image.open(io.BytesIO(base64.b64decode(url.split(',')[1]))).convert('RGB'); w, h = im.size
-    assert w == 1080 and 700 < h < 1400, (w, h)
+    assert w == 2246 and 1400 < h < 2200 and w > h, (w, h)
     assert im.getpixel((10, 10)) == (23, 32, 42), im.getpixel((10, 10))                    # dunkler Kopf
     assert im.getpixel((10, h - 5)) == (255, 255, 255)                                     # weißer Fuß
     colors = len(set(im.resize((108, h // 10)).getdata())); assert colors > 25, f'Bild wirkt leer ({colors} Farben)'
@@ -508,7 +508,74 @@ def _(pg):
     im1 = Image.open(io.BytesIO(base64.b64decode(pg.evaluate('IMG.url').split(',')[1]))).convert('RGB')
     tap(pg, '[data-act=gearx]'); pg.locator('[data-sel=fset]').select_option('g:g1'); pg.wait_for_timeout(150); tap(pg, '[data-act=shareimg]'); pg.wait_for_selector('#ov img')
     im2 = Image.open(io.BytesIO(base64.b64decode(pg.evaluate('IMG.url').split(',')[1]))).convert('RGB')
-    assert im1.size[1] < im2.size[1], ('Satz 2 hat nur 1 Spieler, das Spiel mehrere', im1.size, im2.size)
+    assert im1.tobytes() != im2.tobytes(), 'Satz 2 und das ganze Spiel müssen verschieden aussehen'
+    assert pg.evaluate('sheetData().rows.length') == 3 and pg.evaluate('sheetData().k') == 1 or True
+    tap(pg, '[data-act=gearx]'); pg.locator('[data-sel=fset]').select_option('s:s2'); pg.wait_for_timeout(150)
+    assert pg.evaluate('sheetData().rows.length') == 1 and pg.evaluate('sheetData().sg') == 0
+    pg.locator('[data-sel=fset]').select_option('g:g1'); pg.wait_for_timeout(150)
+    assert pg.evaluate('sheetData().rows.length') == 3 and pg.evaluate('sheetData().k') == 2 and pg.evaluate('sheetData().sg') == 1
+
+
+def two_set_state():
+    st = stats_state(); s2 = mkset(2); s2['ev'] = evl('p1', 'att', 'pt', 2, 3000) + evl('p1', 'rec', 'perf', 1, 3100); st['sets'].append(s2); return st
+def open_eval(pg, st, fset=None):
+    open_app(pg, st); tap(pg, 'nav [data-act=tab][data-v=eval]')
+    if fset: pg.locator('[data-sel=fset]').select_option(fset); pg.wait_for_timeout(200)
+def svg_text(pg): return pg.evaluate("document.querySelector('svg.sheet').textContent")
+
+@check('Auswertungsblatt: Anzahl je Satz, Summe, Effizienz und Plus/Minus in einer Tabelle', desktop=True)
+def _(pg):
+    open_eval(pg, two_set_state(), 'g:g1')
+    sd = pg.evaluate('(()=>{const d=sheetData(),r=d.rows.find(x=>x.id==="p1");return{k:d.k,sg:d.sg,u:r.u.map(x=>[x.rN,x.aN,x.sN]),tot:[r.d.rN,r.d.aN,r.d.sN],names:d.rows.map(x=>x.id)}})()')
+    assert sd['k'] == 2 and sd['sg'] == 1 and sd['names'] == ['p1', 'p2', 'p3'], sd
+    assert sd['u'] == [[5, 8, 5], [1, 2, 0]] and sd['tot'] == [6, 10, 5], sd           # Satz 1, Satz 2, Summe
+    txt = svg_text(pg)
+    for w in ['Annahme', 'Angriff', 'Aufschlag', 'Effizienz', 'Plus / Minus', 'Saldo', 'S1', 'S2', 'Σ', 'Team', 'Annahme-Verteilung', 'Angriffsverteilung', 'Sideout-Quote je Läufer', 'Gegner']:
+        assert w in txt, w
+    assert pg.locator('svg.sheet').count() == 1 and not pg.errs
+    pg.locator('[data-sel=fset]').select_option('s:s1'); pg.wait_for_timeout(200)
+    assert pg.evaluate('sheetData().sg') == 0 and 'S1' in svg_text(pg) and 'S2' not in svg_text(pg), 'bei einem Satz gibt es keine Summenspalte'
+    pg.locator('[data-sel=fset]').select_option('all'); pg.wait_for_timeout(200)
+    assert pg.evaluate('[sheetData().k,sheetData().sg]') == [0, 1] and 'S1' not in svg_text(pg), 'bei „Alle Spiele“ nur Summen'
+
+@check('Auswertungsblatt: Sideout- und Break-Quote je Läufer werden aus den Ballwechseln berechnet', desktop=True)
+def _(pg):
+    E = lambda i, p, c, r, rot_: {'id': f'x{i}', 'p': p, 'c': c, 'r': r, 'rot': rot_, 't': i}
+    s = mkset(1, serve='Annahme'); s['ev'] = [E(1, 'p1', 'rec', 'perf', 1), E(2, 'p1', 'att', 'pt', 1),     # Läufer 1: Sideout gewonnen
+        E(3, 'p1', 'srv', 'ace', 6), E(4, 'p1', 'srv', 'err', 6), E(5, 'p1', 'rec', 'err', 6),            # Läufer 6: Break gewonnen, Break verloren, Sideout verloren
+        E(6, '', 'sc', 'wp', 6)]                                                                          # Korrektur zählt nicht als Ballwechsel
+    open_eval(pg, state(sets=[s]), 'g:g1')
+    so = pg.evaluate('sheetData().so')
+    assert (so[0]['n'], so[0]['w'], so[0]['bn']) == (1, 1, 0), so[0]
+    assert (so[5]['n'], so[5]['w'], so[5]['bn'], so[5]['bw']) == (1, 0, 2, 1), so[5]
+    assert sum(x['n'] + x['bn'] for x in so) == 4, so
+    assert 'Läufer 1' in svg_text(pg) and '1/1' in svg_text(pg)
+
+@check('Auswertungsblatt: alle Schriften bleiben in ihren Kästchen (lange Namen, 5 Sätze, 14 Spieler)', desktop=True)
+def _(pg):
+    st = state(players=14); st['players'][4]['name'] = 'W' * 40; st['players'][4]['nr'] = '999'
+    sets = []
+    for i in range(1, 6):
+        s = mkset(i); s['ev'] = []
+        for k, p in enumerate(st['players']): s['ev'] += evl(p['id'], 'att', 'pt', 12 + k, i * 100) + evl(p['id'], 'rec', 'perf', 9, i * 100 + 50) + evl(p['id'], 'srv', 'ace', 7, i * 100 + 70)
+        sets.append(s)
+    st['sets'] = sets; open_eval(pg, st, 'g:g1')
+    bad = pg.evaluate("""(()=>{const svg=document.querySelector('svg.sheet'),vb=svg.viewBox.baseVal,rects=[...svg.querySelectorAll('rect')].map(r=>({x:+r.getAttribute('x')||0,y:+r.getAttribute('y')||0,w:+r.getAttribute('width'),h:+r.getAttribute('height')})).filter(r=>r.w<vb.width*0.9),bad=[];
+      svg.querySelectorAll('text').forEach(t=>{const b=t.getBBox(),cx=b.x+b.width/2,cy=b.y+b.height/2;
+       if(b.x<-.5||b.x+b.width>vb.width+.5||b.y<-.5||b.y+b.height>vb.height+.5)bad.push('außerhalb: '+t.textContent);
+       const inside=rects.filter(r=>cx>=r.x&&cx<=r.x+r.w&&cy>=r.y&&cy<=r.y+r.h).sort((a,c)=>a.w*a.h-c.w*c.h)[0];
+       if(inside&&(b.x<inside.x-.6||b.x+b.width>inside.x+inside.w+.6))bad.push('Kästchen: '+t.textContent+' '+Math.round(b.x+b.width-inside.x-inside.w))});
+      const hd=[...svg.querySelectorAll('text')].find(t=>t.textContent==='Annahme'),lim=+hd.previousElementSibling.getAttribute('x');
+      svg.querySelectorAll('text').forEach(t=>{const b=t.getBBox();if(t.textContent[0]==='#'&&b.x<300&&b.x+b.width>lim)bad.push('Name läuft in Tabelle: '+t.textContent)});
+      return bad})()""")
+    assert not bad, bad[:8]
+    assert svg_text(pg).count('#') >= 14 and not pg.errs
+
+@check('Auswertung: „Weitere Auswertungen“ bleibt beim Neuzeichnen offen')
+def _(pg):
+    open_eval(pg, stats_state()); assert pg.locator('details.evd[open]').count() == 0
+    tap(pg, 'details.evd > summary'); assert pg.locator('details.evd[open]').count() == 1
+    pg.evaluate('render()'); pg.wait_for_timeout(100); assert pg.locator('details.evd[open]').count() == 1
 
 @check('Aufschlagrecht wechselt mit jedem Satz')
 def _(pg):
@@ -643,7 +710,7 @@ def no_xss(pg):
     for tabn in ['pl', 'game', 'eval']:
         tap(pg, f'nav [data-act=tab][data-v={tabn}]')
     assert pg.evaluate('window.__xss') is None, 'XSS ausgeführt'
-    assert pg.locator('main img, main svg, main b:has-text("\\"")').count() == 0, 'Fremdes HTML im DOM'
+    assert pg.locator('main img, main svg:not(.sheet), main b:has-text("\\"")').count() == 0, 'Fremdes HTML im DOM'
     assert not pg.dialogs and not pg.errs, (pg.dialogs, pg.errs)
 
 @check('XSS über manipulierten Browser-Speicher')

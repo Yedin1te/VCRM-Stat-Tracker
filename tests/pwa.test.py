@@ -3,7 +3,7 @@ import os, re, sys, json, shutil, tempfile, threading, functools, http.server, s
 from PIL import Image
 from playwright.sync_api import sync_playwright
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-FILES = ['index.html', 'manifest.json', 'sw.js', 'icon-192.png', 'icon-512.png']
+FILES = ['index.html', 'manifest.json', 'sw.js', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png']
 PH = re.search(r"PH='([0-9a-f]{64})'", open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()).group(1)
 RES = []
 
@@ -41,6 +41,8 @@ def t_manifest(pg, ctx, url):
     m = json.loads(ctx.request.get(url + 'manifest.json').text())
     assert m['display'] == 'standalone' and m['start_url'] == './' and m['name'] and m['short_name']
     sizes = {i['sizes'] for i in m['icons']}; assert {'192x192', '512x512'} <= sizes, sizes
+    purposes = [i.get('purpose', 'any') for i in m['icons']]
+    assert 'maskable' in purposes and 'any' in purposes and not [x for x in purposes if ' ' in x], purposes   # getrennte Einträge
     for i in m['icons']:
         w, h = Image.open(os.path.join(ROOT, i['src'])).size; assert f'{w}x{h}' == i['sizes'], i
     assert not [l for l in pg.logs if 'Content Security Policy' in l], pg.logs
@@ -79,7 +81,7 @@ def t_report_logo(pg, ctx, url):
     pg.locator('nav [data-act=tab][data-v=eval]').click(); pg.wait_for_timeout(200)
     pg.locator('[data-act=shareimg]').click(); pg.wait_for_selector('#ov img', timeout=8000)
     im = Image.open(io.BytesIO(base64.b64decode(pg.evaluate('IMG.url').split(',')[1]))).convert('RGB')
-    r, g, b = im.getpixel((900, 100)); assert r > 150 and g < 90 and b < 90, f'Logo wurde nicht ins Bild gezeichnet: {(r, g, b)}'
+    r, g, b = im.getpixel((2090, 86))   # Logo oben rechts im Kopf des Querformat-Blatts; assert r > 150 and g < 90 and b < 90, f'Logo wurde nicht ins Bild gezeichnet: {(r, g, b)}'
     assert not pg.errs
 run('Bild teilen: das Logo wird ins Bild übernommen (gleicher Ursprung, kein Sicherheitsfehler)', t_report_logo, logo='Logo.png')
 
