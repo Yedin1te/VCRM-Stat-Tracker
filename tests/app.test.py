@@ -533,7 +533,7 @@ def _(pg):
     txt = svg_text(pg)
     for w in ['Annahme', 'Angriff', 'Aufschlag', 'Effizienz', 'Plus / Minus', 'Saldo', 'Fehl.', 'Schl.', 'Gut', 'Perf.', 'Ohne W.', 'Wirk.', 'Punkt', 'Block', 'Ass', 'Team', 'Annahme-Verteilung', 'Angriffsverteilung', 'Sideout-Quote je Läufer', 'Gegner']:
         assert w in txt, w
-    assert pg.locator('svg.sheet').count() == 1 and not pg.errs
+    assert pg.locator('svg.sheet').count() == 2 and not pg.errs   # Seite 1 und Zuspiel-Seite
     pg.locator('[data-sel=fset]').select_option('s:s2'); pg.wait_for_timeout(200)
     assert pg.evaluate('sheetData().rows.find(x=>x.id==="p1").c.att') == [0, 0, 0, 2, 0], 'ein Satz zeigt nur dessen Bewertungen'
 
@@ -563,6 +563,58 @@ def _(pg):
     assert (so[0]['n'], so[0]['w'], so[0]['f']) == (1, 1, 0), so[0]
     assert (so[5]['n'], so[5]['w'], so[5]['f']) == (1, 1, 1), so[5]
     assert sum(x['f'] for x in so) == 1 and '1st Ball' in svg_text(pg)
+
+
+@check('Zuspiel: Killquote nach Annahme (erster Angriff) und Werte je Zuspieler werden richtig gezählt', desktop=True)
+def _(pg):
+    E = lambda i, p, c, r: {'id': f'z{i}', 'p': p, 'c': c, 'r': r, 'rot': 1, 't': i}
+    s = mkset(1); s['act'] = ['p1', 'p2', 'p3']; s['rl'] = {'p1': 'ZP', 'p2': 'AA', 'p3': 'LI'}
+    s['ev'] = [E(1, 'p3', 'rec', 'perf'), E(2, 'p2', 'att', 'pt'),                                   # perfekt -> Punkt
+               E(3, 'p3', 'rec', 'ok'), E(4, 'p2', 'att', 'eff'), E(5, 'p2', 'att', 'err'),            # gut -> Wirkung (der Fehler danach zählt nicht als erster Angriff)
+               E(6, 'p3', 'rec', 'bad'), E(7, 'p2', 'att', 'rec'), E(8, 'p2', 'att', 'pt'),            # schlecht -> ohne Wirkung, dann Punkt
+               E(9, 'p1', 'srv', 'ace')]
+    st = state(players=3); st['players'][0]['role'] = 'ZP'; st['sets'] = [s]
+    open_eval(pg, st, 'g:g1')
+    z = pg.evaluate('sheetData().zp')
+    q = {k: [x[k] for x in z['byR']] for k in 'nakwoe'}
+    assert q['n'] == [1, 1, 1] and q['a'] == [1, 1, 1] and q['k'] == [1, 0, 0] and q['w'] == [0, 1, 0] and q['o'] == [0, 0, 1] and q['e'] == [0, 0, 0], q
+    assert len(z['rows']) == 1, z['rows']
+    r = z['rows'][0]
+    assert r['id'] == 'p1' and (r['att'], r['pt'], r['eff'], r['err'], r['ace'], r['blk']) == (5, 2, 1, 1, 1, 0), r
+    assert r['r'] == [{'a': 1, 'k': 1}, {'a': 1, 'k': 0}, {'a': 1, 'k': 0}], r['r']
+    txt = pg.evaluate("document.querySelectorAll('svg.sheet')[1].textContent")
+    for w in ['Zuspiel', 'Killquote nach Annahme', 'Perfekt', 'Gut', 'Schlecht', 'Direkte Punkte', 'n. Perfekt', '#1 ']: assert w in txt, w
+    assert pg.locator('[data-act=shareimg2]').count() == 1 and not pg.errs
+
+@check('Zuspiel: mehrere oder kein Zuspieler im Satz werden getrennt ausgewiesen, Seite fehlt ohne Angriffe', desktop=True)
+def _(pg):
+    E = lambda i, p, c, r: {'id': f'w{i}', 'p': p, 'c': c, 'r': r, 'rot': 1, 't': i}
+    s1 = mkset(1); s1['act'] = ['p1', 'p2']; s1['rl'] = {'p1': 'ZP', 'p2': 'ZP'}; s1['ev'] = [E(1, 'p3', 'rec', 'perf'), E(2, 'p3', 'att', 'pt')]
+    s2 = mkset(2); s2['act'] = ['p3']; s2['rl'] = {'p3': 'AA'}; s2['ev'] = [E(3, 'p3', 'rec', 'ok'), E(4, 'p3', 'att', 'pt')]
+    st = state(players=3); st['sets'] = [s1, s2]; open_eval(pg, st, 'g:g1')
+    ids = pg.evaluate('sheetData().zp.rows.map(r=>r.id)'); assert sorted(ids) == ['x0', 'xm'], ids
+    s3 = mkset(1); s3['ev'] = [E(5, 'p1', 'rec', 'perf')]; st2 = state(players=3); st2['sets'] = [s3]
+    open_eval(pg, st2, 'g:g1'); assert pg.locator('svg.sheet').count() == 1 and pg.locator('[data-act=shareimg2]').count() == 0
+
+@check('Zuspiel: alle Schriften bleiben in ihren Kästchen (lange Namen)', desktop=True)
+def _(pg):
+    st = state(players=5)
+    for i, p in enumerate(st['players']): p['name'] = 'W' * 40; p['nr'] = '99' + str(i); p['role'] = 'ZP'
+    sets = []
+    for i in range(1, 6):
+        s = mkset(i); s['act'] = ['p1']; s['rl'] = {}; s['ev'] = []
+        for k in range(30): s['ev'] += [{'id': f'f{i}_{k}a', 'p': 'p2', 'c': 'rec', 'r': ['perf', 'ok', 'bad'][k % 3], 'rot': 1, 't': i * 100 + k * 2}, {'id': f'f{i}_{k}b', 'p': 'p3', 'c': 'att', 'r': ['pt', 'eff', 'rec', 'err'][k % 4], 'rot': 1, 't': i * 100 + k * 2 + 1}]
+        sets.append(s)
+    sets[1]['act'] = ['p1', 'p2']; sets[2]['act'] = []     # mehrere / kein Zuspieler -> Zusatzzeilen
+    st['sets'] = sets; open_eval(pg, st, 'g:g1')
+    bad = pg.evaluate("""(()=>{const svg=document.querySelectorAll('svg.sheet')[1],vb=svg.viewBox.baseVal,rects=[...svg.querySelectorAll('rect')].map(r=>({x:+r.getAttribute('x')||0,y:+r.getAttribute('y')||0,w:+r.getAttribute('width'),h:+r.getAttribute('height')})).filter(r=>r.w<vb.width*0.9&&r.h>1),bad=[];
+      svg.querySelectorAll('text').forEach(t=>{const b=t.getBBox(),cx=b.x+b.width/2,cy=b.y+b.height/2;
+       if(b.x<-.5||b.x+b.width>vb.width+.5||b.y<-.5||b.y+b.height>vb.height+.5)bad.push('außerhalb: '+t.textContent);
+       const inside=rects.filter(r=>cx>=r.x&&cx<=r.x+r.w&&cy>=r.y&&cy<=r.y+r.h).sort((a,c)=>a.w*a.h-c.w*c.h)[0];
+       if(inside&&(b.x<inside.x-.6||b.x+b.width>inside.x+inside.w+.6))bad.push('Kästchen: '+t.textContent)});
+      return bad})()""")
+    assert not bad, bad[:8]
+    assert pg.evaluate('sheetData().zp.rows.length') >= 3 and not pg.errs
 
 @check('Auswertungsblatt: alle Schriften bleiben in ihren Kästchen (lange Namen, 5 Sätze, 14 Spieler)', desktop=True)
 def _(pg):
