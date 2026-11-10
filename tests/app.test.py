@@ -531,7 +531,7 @@ def _(pg):
     assert sd['c']['att'] == [1, 2, 2, 5, 1] and sd['c']['rec'] == [1, 1, 1, 3] and sd['c']['srv'][3] == 1, sd['c']          # Fehler, ohne Wirkung, Wirkung, Punkt, Block
     assert sum(sd['t']['att']) >= sum(sd['c']['att']) and len(sd['t']['rec']) == 4 and len(sd['t']['srv']) == 4, sd['t']
     txt = svg_text(pg)
-    for w in ['Annahme', 'Angriff', 'Aufschlag', 'Effizienz', 'Plus / Minus', 'Saldo', 'Fehl.', 'Schl.', 'Gut', 'Perf.', 'Ohne W.', 'Wirk.', 'Punkt', 'Block', 'Ass', 'Team', 'Annahme-Verteilung', 'Angriffsverteilung', 'Sideout-Quote je Läufer', 'Gegner']:
+    for w in ['Annahme', 'Angriff', 'Aufschlag', 'Effizienz', 'Plus / Minus', 'Saldo', 'Quoten', 'Kill %', 'Fehler %', 'Fehl.', 'Schl.', 'Gut', 'Perf.', 'o. W.', 'Wirk.', 'Punkt', 'Block', 'Ass', 'Team', 'Annahme-Verteilung', 'Angriffsverteilung', 'Sideout-Quote je Läufer', 'Gegner']:
         assert w in txt, w
     assert pg.locator('svg.sheet').count() == 2 and not pg.errs   # Seite 1 und Zuspiel-Seite
     pg.locator('[data-sel=fset]').select_option('s:s2'); pg.wait_for_timeout(200)
@@ -564,6 +564,16 @@ def _(pg):
     assert (so[5]['n'], so[5]['w'], so[5]['f']) == (1, 1, 1), so[5]
     assert sum(x['f'] for x in so) == 1 and '1st Ball' in svg_text(pg)
 
+
+
+@check('Auswertungsblatt: Killquote und Fehlerquote je Spieler (Angriff ohne Block)', desktop=True)
+def _(pg):
+    E = lambda i, c, r: {'id': f'q{i}', 'p': 'p1', 'c': c, 'r': r, 'rot': 1, 't': i}
+    s = mkset(1); s['ev'] = [E(1, 'att', 'pt'), E(2, 'att', 'pt'), E(3, 'att', 'pt'), E(4, 'att', 'err'), E(5, 'att', 'eff'), E(6, 'att', 'rec'), E(7, 'att', 'blk'), E(8, 'att', 'pt')]   # 7 Angriffe ohne Block: 4 Punkte, 1 Fehler
+    open_eval(pg, state(sets=[s]), 'g:g1')
+    cells = pg.evaluate("[...document.querySelector('svg.sheet').querySelectorAll('text')].map(t=>t.textContent)")
+    assert '57%' in cells and '14%' in cells, cells      # 4/7 und 1/7
+    assert not pg.errs
 
 @check('Zuspiel: Killquote nach Annahme (erster Angriff) und Werte je Zuspieler werden richtig gezählt', desktop=True)
 def _(pg):
