@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-+bk63hTbLn55KSiZH7zibRoDIfB4oM3w74Pe7v8XQGE='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-RW5D6a2ht6hawDV5a7LWZIWtrg1Rnr7UGo4bGNe1gyI='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#17202a">
@@ -268,7 +268,7 @@ function helpHtml(){
  <p>Die Zeilen sind nach Rolle gruppiert (MB Mittelblocker, AA Außenangreifer, DI Diagonalangreifer, ZP Zuspieler, LI Libero) und innerhalb einer Rolle nach Rückennummer sortiert. Die kleine Zahl vorn ist die aktuelle Position.</p></details>
  <details><summary>Auswertung lesen</summary>
  <p>Oben wählst du, ob alle Spiele, ein ganzes Spiel oder ein einzelner Satz gezeigt wird. Darunter siehst du das Auswertungsblatt im A4-Querformat: oben Gegner, Datum und Ergebnis, dann eine Tabelle mit der Anzahl je Bewertung (Annahme: Fehler, Schlecht, Gut, Perfekt; Angriff und Aufschlag: Fehler, ohne Wirkung, mit Wirkung, Punkt bzw. Ass, beim Angriff auch Block), dahinter Effizienz und Plus/Minus, ganz unten die Teamwerte Annahme-Verteilung, Angriffsverteilung und Sideout-Quote je Läufer. Die Spalten „Quoten“ zeigen Killquote (Punkte ÷ Angriffe) und Fehlerquote (Fehler ÷ Angriffe) je Spieler, Angriffe ohne Block. Die Zahlen gelten für die oben gewählte Auswahl (alle Spiele, ein Spiel oder ein Satz). Für einen einzelnen Satz wählst du ihn oben aus. Am Handy hilft das Querformat (⟳) oder seitliches Wischen. Die Karten „Punkte", „Plus/Minus" und die Einzelkarten stehen darunter im Bereich „Weitere Auswertungen".</p>
- <p><b>Zuspiel (zweite Seite):</b> Oben steht die Killquote nach Annahme: Bei Perfekt, Gut und Schlecht zählt nur der erste Angriff im Ballwechsel nach der Annahme (Punkt ÷ Angriffe). Darunter siehst du je Zuspieler direkte Punkte (Angriff Punkt, Block, Ass), Angriffe mit Wirkung, Fehler und die Killquote nach jeder Annahme. Zuspieler ist der Spieler mit Rolle ZP im Satz. Stehen mehrere oder keiner mit dieser Rolle im Satz, erscheinen die Werte in der Zeile „mehrere/ohne Zuspieler“. Farben ab 3 Angriffen: grün ab 45 %, rot unter 25 %.</p>
+ <p><b>Zuspiel (zweite Seite):</b> Oben steht die Killquote nach Annahme: Bei Perfekt, Gut und Schlecht zählt nur der erste Angriff im Ballwechsel nach der Annahme (Punkt ÷ Angriffe). Darunter siehst du je Zuspieler alle Angriffe des Teams, solange er auf dem Feld stand: Angriffe gesamt = Fehler + ohne Wirkung + mit Wirkung + Punkt (Block zählt nicht), dazu die Killquote gesamt und nach jeder Annahme. Zuspieler ist der Spieler mit Rolle ZP im Satz. Stehen mehrere oder keiner mit dieser Rolle im Satz, erscheinen die Werte in der Zeile „mehrere/ohne Zuspieler“. Farben ab 3 Angriffen: grün ab 45 %, rot unter 25 %.</p>
  <p><b>Teamwerte:</b> Die Annahme-Verteilung zeigt, wie viele Annahmen Fehler, Schlecht, Gut oder Perfekt waren (auch je Satz). Die Angriffsverteilung zeigt den Anteil der Angriffe je Spieler. Sideout-Quote: Anteil der Ballwechsel nach gegnerischem Aufschlag, die wir gewonnen haben, je Läufer (Position des Zuspielers). 1st Ball: Anteil dieser Ballwechsel, die wir direkt mit dem ersten Angriff nach der Annahme gewonnen haben (Angriff „Punkt“, ohne Block und ohne Gegnerfehler). Break: dasselbe wie Sideout nach eigenem Aufschlag. Grün ab 65 %, rot unter 50 %, erst ab 3 Ballwechseln. Es zählen nur Ballwechsel mit erfasstem Punkt.</p>
  <p><b>Annahme:</b> Ø-Note und Anteil positiver Annahmen. <b>Angriff:</b> Punktquote und Fehlerquote, dazu die Zahl der Blockpunkte (die Quoten rechnen ohne Block). <b>Aufschlag:</b> Fehlerquote und „Wirkung+Ass", also der Anteil der Aufschläge, die Druck gemacht haben.</p>
  <p><b>Plus/Minus:</b> Plus sind direkte Punkte (Angriff „Punkt", Block, Ass), Minus sind eigene Fehler (Annahme-, Angriffs- und Aufschlagfehler). Der Saldo ist Plus minus Minus, grün über 0 und rot darunter. In den Karten sind die Spieler nach Saldo sortiert, im Blatt nach Rückennummer.</p>
@@ -360,7 +360,7 @@ const COLS=[{g:'Annahme',c:'rec',items:[['err','Fehl.','b'],['bad','Schl.','w'],
  {g:'Aufschlag',c:'srv',items:[['err','Fehl.','b'],['none','o. W.','w'],['eff','Wirk.','n'],['ace','Ass','g']]}];
 function zuspielData(sets){   // erster Angriff nach der Annahme und Werte je Zuspieler (Spieler mit Rolle ZP im Satz)
  const RT=['perf','ok','bad'],AR={perf:0,ok:1,bad:2},byR=RT.map(()=>({n:0,a:0,k:0,w:0,o:0,e:0})),zs={};
- const zrow=id=>zs[id]||(zs[id]={id,att:0,eff:0,pt:0,blk:0,ace:0,err:0,r:RT.map(()=>({a:0,k:0}))});
+ const zrow=id=>zs[id]||(zs[id]={id,att:0,err:0,owk:0,eff:0,pt:0,r:RT.map(()=>({a:0,k:0}))});
  sets.forEach(s=>{
   const zp=s.act.map(id=>S.players.find(p=>p.id===id)).filter(p=>p&&eRole(s,p)==='ZP'),key=zp.length===1?zp[0].id:zp.length?'xm':'x0';
   let buf=[];
@@ -369,14 +369,13 @@ function zuspielData(sets){   // erster Angriff nach der Annahme und Werte je Zu
    for(const e of buf){
     if(e.c==='rec'&&AR[e.r]!==undefined){byR[AR[e.r]].n++;if(rr===null)rr=AR[e.r]}
     else if(e.c==='att'){
-     if(e.r==='blk')z.blk++;else if(['err','rec','eff','pt'].includes(e.r)){z.att++;if(e.r==='pt')z.pt++;else if(e.r==='eff')z.eff++;else if(e.r==='err')z.err++;if(rr!==null&&first===null)first=e}}
-    else if(e.c==='srv'&&e.r==='ace')z.ace++;}
+     if(['err','rec','eff','pt'].includes(e.r)){z.att++;if(e.r==='pt')z.pt++;else if(e.r==='eff')z.eff++;else if(e.r==='err')z.err++;else z.owk++;if(rr!==null&&first===null)first=e}}}
    if(first){const q=byR[rr];q.a++;if(first.r==='pt')q.k++;else if(first.r==='eff')q.w++;else if(first.r==='rec')q.o++;else q.e++;const m=z.r[rr];m.a++;if(first.r==='pt')m.k++}
    buf=[]};
   for(const e of s.ev){buf.push(e);if(ptOf(e.c,e.r))flush()}
   flush()});
  const nm=r=>r.id==='xm'?'mehrere Zuspieler':r.id==='x0'?'ohne Zuspieler':'#'+r.p.nr+' '+r.p.name;
- const rows=Object.values(zs).filter(r=>r.att+r.blk+r.ace>0||r.r.some(m=>m.a)).map(r=>Object.assign(r,{p:S.players.find(p=>p.id===r.id)||{name:'?',nr:''}})).map(r=>Object.assign(r,{label:nm(r)})).sort((a,b)=>(a.id[0]==='x')-(b.id[0]==='x')||a.label.localeCompare(b.label));
+ const rows=Object.values(zs).filter(r=>r.att>0||r.r.some(m=>m.a)).map(r=>Object.assign(r,{p:S.players.find(p=>p.id===r.id)||{name:'?',nr:''}})).map(r=>Object.assign(r,{label:nm(r)})).sort((a,b)=>(a.id[0]==='x')-(b.id[0]==='x')||a.label.localeCompare(b.label));
  return{byR,rows,has:byR.some(q=>q.a)||rows.some(r=>r.att>0)};
 }
 function sheetData(){
@@ -503,21 +502,21 @@ function zuspielSvg(d,o){
   T(q.a?pc(q.k,q.a)+'  '+q.k+'/'+q.a:'–',X+cw0+bw+14,my,12,'700','#17202a','start',96)});
  y+=4*RH+26;
  // B) Zuspieler
- T('Zuspieler: direkte Punkte, Wirkung und Killquote nach Annahme',X,y+10,15,'700','#17202a','start',CW);y+=26;
- const cb=[['Zuspieler',257,1],['Angriffe',64],['Wirkung',64],['Punkt',64],['Block',64],['Ass',64],['Direkte Punkte',84],['Fehler',64],['Killquote',84],['n. Perfekt',86],['n. Gut',86],['n. Schlecht',86]];
+ T('Zuspieler: Angriffe, Wirkung, Punkte und Killquote nach Annahme',X,y+10,15,'700','#17202a','start',CW);y+=26;
+ const cb=[['Zuspieler',267,1],['Angriffe',80],['Fehler',80],['o. W.',80],['Wirkung',80],['Punkt',80],['Killquote',100],['n. Perfekt',100],['n. Gut',100],['n. Schlecht',100]];
  hdr(cb,y,X);y+=22;
- const sum=z.rows.reduce((a,r)=>({att:a.att+r.att,eff:a.eff+r.eff,pt:a.pt+r.pt,blk:a.blk+r.blk,ace:a.ace+r.ace,err:a.err+r.err,r:a.r.map((m,i)=>({a:m.a+r.r[i].a,k:m.k+r.r[i].k}))}),{att:0,eff:0,pt:0,blk:0,ace:0,err:0,r:[0,1,2].map(()=>({a:0,k:0}))});
+ const sum=z.rows.reduce((a,r)=>({att:a.att+r.att,err:a.err+r.err,owk:a.owk+r.owk,eff:a.eff+r.eff,pt:a.pt+r.pt,r:a.r.map((m,i)=>({a:m.a+r.r[i].a,k:m.k+r.r[i].k}))}),{att:0,err:0,owk:0,eff:0,pt:0,r:[0,1,2].map(()=>({a:0,k:0}))});
  z.rows.concat(z.rows.length>1?[Object.assign(sum,{label:'Gesamt',total:1})]:[]).forEach((r,i)=>{
   const ry=y+i*RH,my=ry+RH/2,all=r.total;
   if(all)R(X-4,ry,CW+8,RH,'#e9e6de',6);else if(i%2)R(X-4,ry,CW+8,RH,'#f6f5f0',4);
   T(r.label,X+6,my,13,'700','#17202a','start',cb[0][1]-10);
-  let x=X+cb[0][1];const vals=[r.att,r.eff,r.pt,r.blk,r.ace,r.pt+r.blk+r.ace,r.err];
-  vals.forEach((v,j)=>{const w=cb[j+1][1];num(v,x+w/2,my,w,all||j===5,j===5?'#1f7a4d':j===6?'#c0392b':null);x+=w});
-  pill(pc(r.pt,r.att),gr(r.pt,r.att),x+42,my,84);x+=84;
-  r.r.forEach(m=>{pill(m.a?pc(m.k,m.a)+' ('+m.k+'/'+m.a+')':'–',gr(m.k,m.a),x+43,my,86);x+=86})});
+  let x=X+cb[0][1];const vals=[r.att,r.err,r.owk,r.eff,r.pt];
+  vals.forEach((v,j)=>{const w=cb[j+1][1];num(v,x+w/2,my,w,all||j===0,j===1?'#c0392b':j===4?'#1f7a4d':null);x+=w});
+  pill(pc(r.pt,r.att),gr(r.pt,r.att),x+50,my,100);x+=100;
+  r.r.forEach(m=>{pill(m.a?pc(m.k,m.a)+' ('+m.k+'/'+m.a+')':'–',gr(m.k,m.a),x+50,my,100);x+=100})});
  y+=(z.rows.length+(z.rows.length>1?1:0))*RH;
  const H=Math.max(794,y+66);
- T('Killquote = Angriffe mit Punkt ÷ Angriffe · „nach Annahme“ zählt nur der erste Angriff im Ballwechsel nach der Annahme · Direkte Punkte = Angriff Punkt + Block + Ass',X,H-34,10,'400','#8a94a0','start',CW);
+ T('Killquote = Angriffe mit Punkt ÷ Angriffe · „nach Annahme“ zählt nur der erste Angriff im Ballwechsel nach der Annahme · Angriffe = Fehler + ohne Wirkung (o. W.) + Wirkung + Punkt, ohne Block',X,H-34,10,'400','#8a94a0','start',CW);
  T('Zuspieler = Spieler mit Rolle ZP im Satz; bei mehreren oder keinem Zuspieler im Satz unter „mehrere/ohne Zuspieler“ · Farben ab 3 Angriffen: grün ab 45 %, rot unter 25 %',X,H-20,10,'400','#8a94a0','start',CW);
  T('Volleyball Tracker · '+new Date().toLocaleDateString('de-DE'),X,H-7,10,'700','#5b6770','start',CW);
  return svgWrap(out,W,H,o);
