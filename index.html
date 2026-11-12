@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-oJxzoVw1jLDnXq1AGWihQ+CBVsiJocXMx4kvntkd6Hw='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-YceTCtmzki4lhWpIf/R8Z3z4jzptDOWMgF9U2pt5Hwc='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#17202a">
@@ -121,6 +121,9 @@ html.lap .gl{max-width:1150px}
 .sheetwrap{overflow-x:auto;background:#fff;border:1px solid var(--bd);border-radius:10px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
 .sheetbox{min-width:900px}.sheetbox svg{display:block;width:100%;height:auto}
 .evd{margin-bottom:12px}.evd>summary{font-weight:700;padding:10px 4px;cursor:pointer}
+.vbar{padding:8px}.vlive{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0 8px;font-size:12px}
+.vp{margin-top:6px}.vp .pill{white-space:normal;display:inline-block;margin:2px 2px 0 0}
+.sm.mic.on{background:var(--b);border-color:var(--b);color:#fff}
 </style>
 </head>
 <body>
@@ -144,7 +147,7 @@ const roleOpts=v=>`<option value="">Rolle</option>`+ROLES.map(([k,l])=>`<option 
 const cP=p=>p&&okid(p.id)?{id:p.id,name:cs(p.name,40),nr:cs(p.nr,3),role:cR(p.role)}:null;
 const cG=g=>g&&okid(g.id)?{id:g.id,opp:cs(g.opp,40),date:cday(g.date)}:null;
 const cA=a=>(Array.isArray(a)?a:[]).filter(okid).slice(0,20);
-const cE=e=>e&&okid(e.id)&&(e.p===''||okid(e.p))&&typeof e.c==='string'&&has(CATS,e.c)&&typeof e.r==='string'&&CATS[e.c].b.some(x=>x[0]===e.r)?{id:e.id,p:e.p,c:e.c,r:e.r,rot:cint(e.rot,1,6,1),t:Number.isFinite(Number(e.t))?Number(e.t):0}:null;
+const cE=e=>e&&okid(e.id)&&(e.p===''||okid(e.p))&&typeof e.c==='string'&&has(CATS,e.c)&&typeof e.r==='string'&&CATS[e.c].b.some(x=>x[0]===e.r)?{id:e.id,p:e.p,c:e.c,r:e.r,rot:cint(e.rot,1,6,1),t:Number.isFinite(Number(e.t))?Number(e.t):0,...(Array.isArray(e.pos)&&cPos(e.pos).some(Boolean)?{pos:cPos(e.pos)}:{})}:null;
 const cPos=a=>Array.isArray(a)?a.slice(0,6).map(x=>x===''||okid(x)?x:''):[];
 const cRl=o=>{const r={};if(o&&typeof o==='object'&&!Array.isArray(o))Object.keys(o).filter(okid).slice(0,20).forEach(k=>{r[k]=cR(o[k])});return r};
 const cS=s=>s&&okid(s.id)&&(!s.gid||okid(s.gid))?{id:s.id,gid:s.gid||'',opp:cs(s.opp,40),date:cday(s.date),serve:s.serve==='Annahme'?'Annahme':'Aufschlag',rot:cint(s.rot,1,6,1),act:cA(s.act),pos:cPos(s.pos),rl:cRl(s.rl)}:null;
@@ -211,8 +214,9 @@ function game(s){
  const sv=sc.srv==='us'?S.players.find(p=>p.id===pp[0]):null;
  let h=`<div class="gl"><div class="row top a-h"><div class="tt"><div class="score num" data-act="fix" style="cursor:pointer"><span class="${sc.srv==='us'?'sv':''}">${sc.u}</span> : <span class="${sc.srv==='opp'?'sv':''}">${sc.o}</span><span class="mu" style="font-size:12px;font-weight:400"> ✎</span></div><div class="mu sub">${esc(s.opp)} · Satz ${nrOf(s)} · Aufschlag ${sc.srv==='us'?'wir'+(sv?` (#${esc(sv.nr)} ${esc(sv.name)})`:''):'Gegner'}${won?` · <b style="color:var(--${sc.u>sc.o?'g':'b'})">Satz ${sc.u>sc.o?'gewonnen':'verloren'}, bitte beenden</b>`:''}</div></div>
  <button class="sm" data-act="rot+">Läufer <b class="num">${s.rot}</b> ▸</button>
- <button class="sm ${sub?'on':''}" data-act="wech">Wechsel</button></div>
+ <button class="sm ${sub?'on':''}" data-act="wech">Wechsel</button><button class="sm mic ${V.on?'on':''}" data-act="mic" aria-label="Spracheingabe">🎤</button></div>
  <div class="grid g2 a-p" style="margin-bottom:6px">${CATS.sc.b.filter(x=>x[0]==='opp'||x[0]==='oerr').map(([r,l,k])=>`<button class="hb ${k}" data-act="pt" data-v="${r}" style="min-height:38px;font-size:13px">${l}</button>`).join('')}</div>`;
+ h+=vbarHtml();
  if(fix)h+=`<div class="card a-s" style="padding:8px"><div class="mu" style="margin-bottom:6px">Spielstand korrigieren (ändert nur den Stand, nicht die Statistik)</div><div class="grid g2">${[['wm','Wir −1'],['wp','Wir +1'],['gm','Gegner −1'],['gp','Gegner +1']].map(([r,l])=>`<button data-act="pt" data-v="${r}">${l}</button>`).join('')}</div><button data-act="pt" data-v="sv" style="width:100%;margin-top:6px">Aufschlag tauschen (jetzt: ${sc.srv==='us'?'wir':'Gegner'})</button></div>`;
  if(sub)h+=`<div class="card a-s" style="padding:8px"><div class="mu" style="margin-bottom:6px">Wechsel: Spieler auf eine Position setzen</div>${posGrid(pp,S.players,'wpos')}<div class="mu" style="margin:8px 0 4px">Zusätzlich anzeigen (z.B. Libero)</div><div class="row">${S.players.filter(p=>!pp.includes(p.id)).map(p=>`<button class="chip ${s.act.includes(p.id)?'on':''}" data-act="tga" data-v="${p.id}">#${esc(p.nr)} ${esc(p.name)}</button>`).join('')}</div><div class="mu" style="margin:8px 0 4px">Rollen in diesem Satz</div>${rolesGrid(S.players.filter(p=>s.act.includes(p.id)),s.rl,'wrl')}</div>`;
  h+=`<div class="row seg a-t" style="margin-bottom:6px">${Object.entries(CATS).filter(([c])=>c!=='sc').map(([c,x])=>`<button class="${cat===c?'on':''}" data-act="cat" data-v="${c}" style="padding:7px">${x.n}</button>`).join('')}</div>`;
@@ -268,13 +272,17 @@ function helpHtml(){
  <p>Die Zeilen sind nach Rolle gruppiert (MB Mittelblocker, AA Außenangreifer, DI Diagonalangreifer, ZP Zuspieler, LI Libero) und innerhalb einer Rolle nach Rückennummer sortiert. Die kleine Zahl vorn ist die aktuelle Position.</p></details>
  <details><summary>Auswertung lesen</summary>
  <p>Oben wählst du, ob alle Spiele, ein ganzes Spiel oder ein einzelner Satz gezeigt wird. Darunter siehst du das Auswertungsblatt im A4-Querformat: oben Gegner, Datum und Ergebnis, dann eine Tabelle mit der Anzahl je Bewertung (Annahme: Fehler, Schlecht, Gut, Perfekt; Angriff und Aufschlag: Fehler, ohne Wirkung, mit Wirkung, Punkt bzw. Ass, beim Angriff auch Block), dahinter Effizienz und Plus/Minus, ganz unten die Teamwerte Annahme-Verteilung, Angriffsverteilung und Sideout-Quote je Läufer. Die Spalten „Annahme-Quote“ zeigen je Spieler den Anteil perfekter Annahmen und den Annahmefehler-Anteil (jeweils ÷ Annahmen). Die Spalten „Angriff-Quote“ zeigen Killquote (Punkte ÷ Angriffe) und Fehlerquote (Fehler ÷ Angriffe), Angriffe ohne Block. Die Zahlen gelten für die oben gewählte Auswahl (alle Spiele, ein Spiel oder ein Satz). Für einen einzelnen Satz wählst du ihn oben aus. Am Handy hilft das Querformat (⟳) oder seitliches Wischen. Die Karten „Punkte", „Plus/Minus" und die Einzelkarten stehen darunter im Bereich „Weitere Auswertungen".</p>
- <p><b>Zuspiel (zweite Seite):</b> Oben steht die Killquote nach Annahme: Bei Perfekt, Gut und Schlecht zählt nur der erste Angriff im Ballwechsel nach der Annahme (Punkt ÷ Angriffe). Darunter siehst du je Zuspieler alle Angriffe des Teams, solange er auf dem Feld stand: Angriffe gesamt = Fehler + ohne Wirkung + mit Wirkung + Punkt (Block zählt nicht), dazu die Killquote gesamt und nach jeder Annahme. Zuspieler ist der Spieler mit Rolle ZP im Satz. Stehen mehrere oder keiner mit dieser Rolle im Satz, erscheinen die Werte in der Zeile „mehrere/ohne Zuspieler“. Farben ab 3 Angriffen: grün ab 45 %, rot unter 25 %.</p>
+ <p><b>Zuspiel (zweite Seite):</b> Oben steht die Killquote nach Annahme: Bei Perfekt, Gut und Schlecht zählt nur der erste Angriff im Ballwechsel nach der Annahme (Punkt ÷ Angriffe). Darunter siehst du je Zuspieler alle Angriffe des Teams, solange er auf dem Feld stand: Angriffe gesamt = Fehler + ohne Wirkung + mit Wirkung + Punkt (Block zählt nicht), dazu die Killquote gesamt und nach jeder Annahme. Zuspieler ist der Spieler mit Rolle ZP, der gerade auf dem Feld steht. Die App speichert dafür bei jeder Eingabe die Aufstellung (Position 1 bis 6). Bei älteren Eingaben ohne gespeicherte Aufstellung gilt die Rolle ZP im Satz. Stehen dort mehrere oder keiner, erscheinen die Werte in der Zeile „mehrere/ohne Zuspieler“. Farben ab 3 Angriffen: grün ab 45 %, rot unter 25 %.</p>
  <p><b>Teamwerte:</b> Die Annahme-Verteilung zeigt, wie viele Annahmen Fehler, Schlecht, Gut oder Perfekt waren (auch je Satz). Die Angriffsverteilung zeigt den Anteil der Angriffe je Spieler. Sideout-Quote: Anteil der Ballwechsel nach gegnerischem Aufschlag, die wir gewonnen haben, je Läufer (Position des Zuspielers). 1st Ball: Anteil dieser Ballwechsel, die wir direkt mit dem ersten Angriff nach der Annahme gewonnen haben (Angriff „Punkt“, ohne Block und ohne Gegnerfehler). Break: dasselbe wie Sideout nach eigenem Aufschlag. Grün ab 65 %, rot unter 50 %, erst ab 3 Ballwechseln. Es zählen nur Ballwechsel mit erfasstem Punkt.</p>
  <p><b>Annahme:</b> Ø-Note und Anteil positiver Annahmen. <b>Angriff:</b> Punktquote und Fehlerquote, dazu die Zahl der Blockpunkte (die Quoten rechnen ohne Block). <b>Aufschlag:</b> Fehlerquote und „Wirkung+Ass", also der Anteil der Aufschläge, die Druck gemacht haben.</p>
  <p><b>Plus/Minus:</b> Plus sind direkte Punkte (Angriff „Punkt", Block, Ass), Minus sind eigene Fehler (Annahme-, Angriffs- und Aufschlagfehler). Der Saldo ist Plus minus Minus, grün über 0 und rot darunter. In den Karten sind die Spieler nach Saldo sortiert, im Blatt nach Rückennummer.</p>
  <p><b>Effizienz:</b> Angriff = (Punkte − Fehler) ÷ Angriffe, ohne Blocks. Grün ab 25 %, rot unter 5 %. Aufschlag = (Asse − Fehler) ÷ Aufschläge. Grün ab 0 %, rot unter −15 %. Annahme = Ø-Note in Prozent von 3. Grün ab 73 %, rot unter 50 %. Alle Farben erscheinen erst ab 3 Aktionen.</p>
  <p><b>Als Bild teilen:</b> Der Knopf oben in der Auswertung erzeugt das Auswertungsblatt als Bild im Querformat (Ergebnis, Tabelle, Teamwerte) und öffnet das Teilen-Menü deines Geräts, zum Beispiel für WhatsApp. Geht das nicht, erscheint das Bild zum Speichern.</p>
  <p>Die Balken zeigen die Verteilung. Die Farbe der Kennzahlen: grün stark, gelb mittel, rot schwach. Sie erscheint erst ab 3 Aktionen. Grün sind zum Beispiel Annahme-Ø ab 2,2, Angriffs-Punktquote ab 35 % und Fehlerquoten bis 10 %.</p></details>
+ <details><summary>Spracheingabe (Test)</summary>
+ <p>Im Reiter „Spiel" startet der Knopf 🎤 die Spracheingabe. Sprich zum Beispiel „Perfekte Annahme von 14", „Angriffspunkt von 19", „Wirkungsloser Angriff von 3", „Block von 5", „Ass von 7", „Gegnerfehler" oder „Punkt für uns". Mehrere Angaben verbindest du mit „und". Die Nummer ist die Rückennummer. Beim Aufschlag ohne Nummer zählt der aktuelle Aufschläger.</p>
+ <p>Die App zeigt, was sie verstanden hat, und bucht es nach 2 Sekunden. Mit „Verwerfen" bucht sie nichts, mit „Jetzt buchen" sofort. Was unklar bleibt (Nummer fehlt, Ergebnis unklar), wird rot angezeigt und nicht gebucht. „Rückgängig" nimmt die letzte Eingabe wie immer zurück.</p>
+ <p>Das funktioniert nur, wenn der Browser Spracherkennung anbietet (Chrome am Android-Handy, Safari am iPhone) und das Mikrofon erlaubt ist. Die Erkennung braucht meist Internet. In der installierten App kann sie je nach Gerät fehlen, dann hilft der Browser.</p></details>
  <details><summary>Laptop-Modus: Erfassen mit der Tastatur</summary>
  <p>Auf einem Laptop ohne Touch schaltet sich der Tastatur-Modus von selbst ein (oder unter ⚙ → Laptop-Modus). Die Hände bleiben dabei auf der Tastatur: <b>links Bereich und Bewertung, rechts der Spieler.</b> Auf jedem Feld stehen die Zifferntasten klein in der Ecke, in jeder Spielerzeile die Spielertaste.</p>
  <p><b>1. Bereich</b> (nur nötig, wenn die App nicht schon von selbst im richtigen Bereich ist): ${Object.entries(CATKEYS).map(([k,c])=>`<kbd>${k.toUpperCase()}</kbd> ${CATS[c].n}`).join(' · ')}. Die Reihenfolge entspricht den Reitern von links nach rechts.</p>
@@ -365,7 +373,9 @@ function zuspielData(sets){   // erster Angriff nach der Annahme und Werte je Zu
   const zp=s.act.map(id=>S.players.find(p=>p.id===id)).filter(p=>p&&eRole(s,p)==='ZP'),key=zp.length===1?zp[0].id:zp.length?'xm':'x0';
   let buf=[];
   const flush=()=>{
-   if(!buf.length)return;const z=zrow(key);let rr=null,first=null;
+   if(!buf.length)return;
+   const lp=(buf.find(e=>e.pos&&e.pos.length)||{}).pos,cz=lp?lp.map(id=>S.players.find(p=>p.id===id)).filter(p=>p&&eRole(s,p)==='ZP'):[],z=zrow(cz.length===1?cz[0].id:key);   // Zuspieler aus der gespeicherten Aufstellung, sonst aus der Satz-Rolle
+   let rr=null,first=null;
    for(const e of buf){
     if(e.c==='rec'&&AR[e.r]!==undefined){byR[AR[e.r]].n++;if(rr===null)rr=AR[e.r]}
     else if(e.c==='att'){
@@ -521,7 +531,7 @@ function zuspielSvg(d,o){
  y+=(z.rows.length+(z.rows.length>1?1:0))*RH;
  const H=Math.max(794,y+66);
  T('Killquote = Angriffe mit Punkt ÷ Angriffe · „nach Annahme“ zählt nur der erste Angriff im Ballwechsel nach der Annahme · Angriffe = Fehler + ohne Wirkung (o. W.) + Wirkung + Punkt, ohne Block',X,H-34,10,'400','#8a94a0','start',CW);
- T('Zuspieler = Spieler mit Rolle ZP im Satz; bei mehreren oder keinem Zuspieler im Satz unter „mehrere/ohne Zuspieler“ · Farben ab 3 Angriffen: grün ab 45 %, rot unter 25 %',X,H-20,10,'400','#8a94a0','start',CW);
+ T('Zuspieler = Spieler mit Rolle ZP auf dem Feld (gespeicherte Aufstellung; bei älteren Eingaben: Rolle ZP im Satz, sonst „mehrere/ohne Zuspieler“) · Farben ab 3 Angriffen: grün ab 45 %, rot unter 25 %',X,H-20,10,'400','#8a94a0','start',CW);
  T('Volleyball Tracker · '+new Date().toLocaleDateString('de-DE'),X,H-7,10,'700','#5b6770','start',CW);
  return svgWrap(out,W,H,o);
 }
@@ -610,7 +620,7 @@ function op(o){applyOp(o);S.pend.push(o);save();ui();if(CFG.url){clearTimeout(tm
 const lab=(c,r)=>[CATS[c].n,CATS[c].b.find(x=>x[0]===r)[1]];
 const LEG={Annahme:{Ok:'Gut'},Angriff:{Recycle:'Ohne Wirkung'}};   // frühere Beschriftungen in alten Tabellenzeilen
 const code=(bn,rn)=>{if(has(LEG,bn)&&has(LEG[bn],rn))rn=LEG[bn][rn];for(const[c,o]of Object.entries(CATS))if(o.n===bn){const x=o.b.find(x=>x[1]===rn);if(x)return[c,x[0]]}return[bn,rn]};
-function evOp(s,e){const p=S.players.find(p=>p.id===e.p)||{name:e.p?'?':'',nr:''},[bn,rn]=lab(e.c,e.r);return{k:'e+',sid:s.id,e:{id:e.id,p:e.p,c:e.c,r:e.r,rot:e.rot,t:e.t},x:{datum:s.date,gegner:s.opp,satz:nrOf(s),spieler:p.name,nr:p.nr,bereich:bn,ergebnis:rn}}}
+function evOp(s,e){const p=S.players.find(p=>p.id===e.p)||{name:e.p?'?':'',nr:''},[bn,rn]=lab(e.c,e.r);return{k:'e+',sid:s.id,e:{id:e.id,p:e.p,c:e.c,r:e.r,rot:e.rot,t:e.t,pos:e.pos},x:{datum:s.date,gegner:s.opp,satz:nrOf(s),spieler:p.name,nr:p.nr,bereich:bn,ergebnis:rn}}}
 const PT={rec:{err:'o'},att:{err:'o',pt:'u',blk:'u'},srv:{err:'o',ace:'u'},sc:{opp:'o',oerr:'u',us:'u'}};
 const ptOf=(c,r)=>has(PT,c)&&has(PT[c],r)?PT[c][r]:null;
 const CR={wp:['u',1],wm:['u',-1],gp:['o',1],gm:['o',-1]};
@@ -645,9 +655,10 @@ function posGrid(pos,list,key){
  return `<div class="mu" style="text-align:center;font-size:12px">Netz</div><div class="grid g3 pg">${[3,2,1,4,5,0].map(i=>`<div><div class="mu" style="font-size:12px">Position ${i+1}</div><select data-sel="${key}" data-i="${i}"><option value="">–</option>${list.map(p=>`<option value="${p.id}" ${pos[i]===p.id?'selected':''}>#${esc(p.nr)} ${esc(p.name)}${p.role?' · '+p.role:''}</option>`).join('')}</select></div>`).join('')}</div>`;
 }
 const zpPos=(pos,rl)=>{const c=padPos(pos).map((id,i)=>{const p=S.players.find(x=>x.id===id);return p&&(rl&&has(rl,p.id)?rl[p.id]:p.role)==='ZP'?i+1:0}).filter(Boolean);return c.find(n=>n===1||n===5||n===6)||c[0]||0};
+const lineup=s=>{const p=padPos(s.pos);return p.some(Boolean)?p:undefined};   // Spieler auf dem Feld (Position 1 bis 6) beim Eintragen
 function addEv(s,e){
  const before=replay(s),pt=ptOf(e.c,e.r);
- op(evOp(s,{id:uid(),rot:s.rot,t:Date.now(),...e}));
+ op(evOp(s,{id:uid(),rot:s.rot,t:Date.now(),pos:lineup(s),...e}));
  if(pt==='u'&&before.srv==='opp')upd(s,{rot:nextRot(s.rot),pos:rotPos(s.pos||[])});
  if(pt)cat=replay(s).srv==='us'?'srv':'rec';
  else if(e.c==='rec'||e.c==='srv')cat='att';
@@ -659,6 +670,74 @@ function undo(s){
  toast('Rückgängig: '+lab(l.c,l.r).join(' '));
  op({k:'e-',id:l.id});
  if(ptOf(l.c,l.r)==='u'&&before.srv==='opp')upd(s,{rot:prevRot(s.rot),pos:unrotPos(s.pos||[])});
+}
+// ---------- Spracheingabe (Test): Ansagen wie „Perfekte Annahme von 14“ werden zu Eingaben ----------
+const NUMW={null:0,eins:1,zwei:2,zwo:2,drei:3,vier:4,'fünf':5,fuenf:5,sechs:6,sieben:7,acht:8,neun:9,zehn:10,elf:11,'zwölf':12,zwoelf:12,dreizehn:13,vierzehn:14,'fünfzehn':15,fuenfzehn:15,sechzehn:16,siebzehn:17,achtzehn:18,neunzehn:19,zwanzig:20,einundzwanzig:21,zweiundzwanzig:22,dreiundzwanzig:23,vierundzwanzig:24,'fünfundzwanzig':25};
+const V={on:false,live:'',log:[],pend:null,help:false,rec:null,tm:0};
+function vdet(w){
+ const nums=(w.match(/\d+/g)||[]).map(Number),T=w.replace(/\d+/g,' ');
+ if(/gegnerfehler|fehler (vom |von |des |der )?gegner/.test(T))return{c:'sc',r:'oerr',nums:[]};
+ if(/punkt (für |fuer |an |vom )?(den )?gegner|gegner(s)? punkt/.test(T))return{c:'sc',r:'opp',nums:[]};
+ if(/punkt (für |fuer )?(uns|wir)|(uns|wir) punkt/.test(T))return{c:'sc',r:'us',nums:[]};
+ const at=re=>{const m=re.exec(T);return m?m.index:-1};
+ const cand=[['srv',at(/aufschlag|aufgeschlagen|service/)],['att',at(/angriff|angreif|attacke|angegriffen|schmetter|block/)],['rec',at(/annahme|angenommen|annehmen/)]].filter(x=>x[1]>=0).sort((a,b)=>a[1]-b[1]);
+ if(!cand.length)return/\b(ass|as|ace)\b/.test(T)?{c:'srv',r:'ace',nums}:{c:null,r:null,nums};
+ const c=cand[0][0];let r=null;
+ if(c==='rec')r=/perfekt|sehr gut|super|traum|\btop\b/.test(T)?'perf':/schlecht|mies|ungenau/.test(T)?'bad':/fehler|direkt/.test(T)?'err':/\bok\b|okay|\bgut|solide/.test(T)?'ok':null;
+ else if(c==='att')r=/wirkungslos|ohne wirkung|recyc/.test(T)?'rec':/geblockt|zugeblockt|abgeblockt/.test(T)?'err':/block/.test(T)?'blk':/punkt|kill/.test(T)?'pt':/wirkung|druck|wirksam/.test(T)?'eff':/fehler|\baus\b|netz/.test(T)?'err':null;
+ else r=/wirkungslos|ohne wirkung/.test(T)?'none':/wirkung|druck/.test(T)?'eff':/\bass?\b|\bace\b|punkt/.test(T)?'ace':/fehler|\baus\b|netz/.test(T)?'err':null;
+ return{c,r,nums};
+}
+function vsegs(text){
+ const t=text.toLowerCase().replace(/[.,;!?]/g,' | ').split(/\s+/).filter(Boolean).map(w=>has(NUMW,w)?String(NUMW[w]):w).join(' '),out=[];
+ t.split('|').forEach(seg=>seg.split(/\s+(?:und|dann|sowie)\s+/).forEach(p=>{p=p.trim();if(!p)return;if(!vdet(p).c&&out.length)out[out.length-1].w+=' '+p;else out.push({w:p})}));
+ return out.map(o=>({...vdet(o.w),w:o.w}));
+}
+function vparse(text,s){
+ const acts=[];
+ vsegs(text).forEach(g=>{
+  if(!g.c){acts.push({ok:false,label:'«'+g.w+'» nicht verstanden'});return}
+  if(g.c==='sc'){acts.push({ok:true,c:'sc',r:g.r,p:'',label:lab('sc',g.r)[1]});return}
+  if(!g.r){acts.push({ok:false,label:CATS[g.c].n+': Ergebnis unklar'});return}
+  let nums=g.nums;
+  if(!nums.length&&g.c==='srv'){const sv=S.players.find(p=>p.id===padPos(s.pos)[0]);if(sv)nums=[Number(sv.nr)]}
+  if(!nums.length){acts.push({ok:false,label:lab(g.c,g.r).join(' ')+': Nummer fehlt'});return}
+  nums.forEach(n=>{const p=S.players.find(p=>String(p.nr).trim()!==''&&Number(p.nr)===n);acts.push(p?{ok:true,c:g.c,r:g.r,p:p.id,label:`${lab(g.c,g.r).join(' ')} · #${p.nr} ${p.name}`}:{ok:false,label:'#'+n+' unbekannt'})});
+ });
+ return acts;
+}
+function vhear(text){
+ const s=curSet();if(!s)return;
+ vcommit();
+ const acts=vparse(text,s);
+ V.pend={text,acts};clearTimeout(V.tm);
+ V.tm=setTimeout(acts.some(a=>a.ok)?vcommit:vcancel,acts.some(a=>a.ok)?2000:4000);
+ render();
+}
+function vcancel(){clearTimeout(V.tm);V.pend=null;if(document.getElementById('app'))render()}
+function vcommit(){
+ clearTimeout(V.tm);const p=V.pend;V.pend=null;if(!p)return;
+ const s=curSet(),done=p.acts.filter(a=>a.ok);
+ if(s&&done.length){done.forEach(a=>addEv(s,{p:a.p,c:a.c,r:a.r}));V.log.unshift(done.map(a=>a.label).join(' · '));V.log=V.log.slice(0,3);navigator.vibrate&&navigator.vibrate(30)}
+ render();
+}
+function toggleMic(){
+ if(V.on){V.on=false;V.live='';try{V.rec&&V.rec.stop()}catch(e){}return}
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){toast('Spracherkennung wird hier nicht unterstützt (am Handy Chrome oder Safari im Browser nutzen)');return}
+ const r=new SR();r.lang='de-DE';r.continuous=true;r.interimResults=true;
+ r.onresult=e=>{let live='';for(let i=e.resultIndex;i<e.results.length;i++){const x=e.results[i];if(x.isFinal)vhear(x[0].transcript);else live+=x[0].transcript}V.live=live;const el=document.getElementById('vlive');if(el)el.textContent=live?'… '+live:''};
+ r.onend=()=>{if(V.on){try{r.start()}catch(x){}}};
+ r.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){V.on=false;toast('Mikrofon nicht erlaubt');render()}};
+ V.rec=r;V.on=true;try{r.start()}catch(x){}
+}
+function vbarHtml(){
+ if(!V.on&&!V.pend&&!V.log.length&&!V.help)return '';
+ const p=V.pend;
+ return `<div class="card a-v vbar"><div class="row sp" style="flex-wrap:nowrap"><b>${V.on?'🎤 Hört zu':'🎤 Aus'}</b><span id="vlive" class="mu vlive">${esc(V.live?'… '+V.live:'')}</span><button class="sm" data-act="vhelp">?</button></div>
+ ${p?`<div class="vp"><div class="mu">Gehört: «${esc(p.text)}»</div>${p.acts.map(a=>`<span class="pill ${a.ok?'g':'b'}">${esc(a.label)}</span>`).join(' ')}<div class="row" style="margin-top:6px;flex-wrap:nowrap"><button class="sm" data-act="vcancel" style="flex:1">Verwerfen</button><button class="sm on" data-act="vnow" style="flex:1">Jetzt buchen</button></div></div>`:''}
+ ${V.log.map(l=>`<div class="mu" style="font-size:12px">✓ ${esc(l)}</div>`).join('')}
+ ${V.help?`<div class="mu" style="font-size:12px;margin-top:6px">Sprich zum Beispiel: „Perfekte Annahme von 14“, „Angriffspunkt von 19“, „Wirkungsloser Angriff von 3“, „Block von 5“, „Ass von 7“, „Gegnerfehler“, „Punkt für uns“. Mehrere Angaben mit „und“ verbinden. Annahme: perfekt, gut, schlecht, Fehler. Angriff: Punkt, Wirkung, wirkungslos (= ohne Wirkung), Fehler (auch „geblockt“), Block (eigener Blockpunkt). Aufschlag: Ass, Wirkung, ohne Wirkung, Fehler. Ohne Nummer beim Aufschlag zählt der aktuelle Aufschläger. Die Ansage wird nach 2 Sekunden gebucht, bis dahin kannst du sie verwerfen.</div>`:''}</div>`;
 }
 let DEFERRED=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFERRED=e});
 const LOGO={msg:'Logo wird gesucht ...'};
@@ -767,7 +846,7 @@ function bkHtml(){
  <button class="pri" data-act="restore" style="margin-top:8px">Wiederherstellen und hochladen</button>
  <div class="row" style="margin-top:8px"><button data-act="bkexp" style="flex:1">Als JSON kopieren</button><button data-act="bkdrop" style="flex:1">Verwerfen</button></div></div>`;
 }
-const NEEDVER=6,MAXSEND=1000;let lastWarn='',QUEUED=false;   // Mindestversion des Google-Skripts (Code.gs)
+const NEEDVER=7,MAXSEND=1000;let lastWarn='',QUEUED=false;   // Mindestversion des Google-Skripts (Code.gs)
 async function sync(){
  if(!CFG.url||busy||!UNL)return;
  if(!CFG.init&&!QUEUED&&(S.players.length||S.games.length||S.sets.length)){queueAll();QUEUED=true}   // erste Verbindung: lokale Daten zuerst hochladen, nie von einer leeren Tabelle überschreiben lassen
@@ -783,7 +862,7 @@ async function sync(){
   }
   const delIds=ops.filter(o=>o.k==='g-'||o.k==='s-').map(o=>o.id);
   S.pend=S.pend.slice(ops.length);
-  const by=new Map();(Array.isArray(d.events)?d.events:[]).forEach(e=>{if(!e||typeof e!=='object')return;const[c,r]=code(e.bereich,e.ergebnis);if(!by.has(e.sid))by.set(e.sid,[]);by.get(e.sid).push({id:e.id,p:e.p,c,r,rot:e.rot,t:e.t})});
+  const by=new Map();(Array.isArray(d.events)?d.events:[]).forEach(e=>{if(!e||typeof e!=='object')return;const[c,r]=code(e.bereich,e.ergebnis);if(!by.has(e.sid))by.set(e.sid,[]);by.get(e.sid).push({id:e.id,p:e.p,c,r,rot:e.rot,t:e.t,pos:e.pos})});
   const nu=cleanState({players:d.players,games:d.games,sets:(Array.isArray(d.sets)?d.sets:[]).map(s=>({...s,ev:((s&&by.get(s.id))||[]).sort((x,y)=>(Number(x.t)||0)-(Number(y.t)||0))}))});
   if(!nu)throw new Error('Ungültige Antwort');
   let warn='';
@@ -840,6 +919,10 @@ document.addEventListener('click',e=>{
  else if(a==='rot+'){upd(s,{rot:nextRot(s.rot),pos:rotPos(s.pos||[])})}
  else if(a==='hit'){const[p,c,r]=v.split('|');addEv(s,{p,c,r});navigator.vibrate&&navigator.vibrate(15)}
  else if(a==='undo')undo(s);
+ else if(a==='mic')toggleMic();
+ else if(a==='vhelp')V.help=!V.help;
+ else if(a==='vcancel')vcancel();
+ else if(a==='vnow')vcommit();
  else if(a==='pt'){addEv(s,{p:'',c:'sc',r:v});navigator.vibrate&&navigator.vibrate(15)}
  else if(a==='end'){if(arm!=='end'){arm='end';setTimeout(()=>{if(arm==='end'){arm=null;render()}},3000)}else{arm=null;S.cur=null;sub=false;save()}}
  else if(a==='addp'){const n=pname.value.trim().slice(0,40),r=pnr.value.trim().slice(0,3);if(!n||!r){toast('Name und Nummer eingeben');return}op({k:'p+',p:{id:uid(),name:n,nr:r,role:cR(prole0.value)}})}
