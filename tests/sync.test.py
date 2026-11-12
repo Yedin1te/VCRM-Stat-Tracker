@@ -121,6 +121,16 @@ def t_bigqueue(br):
     assert len(r['events']) == 6200 and r.get('skipped') == 0, (len(r.get('events', [])), r.get('error'))
 run('Sync: über 5000 offene Eingaben werden in Portionen gesendet („Zu viele Operationen“ tritt nicht mehr auf)', t_bigqueue)
 
+
+def t_linpos(br):
+    st = state(players=8); s1 = mkset(1); pos = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6']; s1['pos'] = pos
+    s1['ev'] = [{'id': 'lp1', 'p': 'p1', 'c': 'att', 'r': 'pt', 'rot': 1, 't': 1, 'pos': pos}, {'id': 'lp2', 'p': 'p2', 'c': 'rec', 'r': 'ok', 'rot': 1, 't': 2}]; st['sets'] = [s1]
+    a = device(br, st); a.evaluate('pushAll()'); do_sync(a)
+    r = json.loads(post('/', json.dumps({'pw': SPW, 'ops': []}).encode()))
+    got = {e['id']: e['pos'] for e in r['events']}; assert got == {'lp1': pos, 'lp2': []}, got
+    mine = a.evaluate('curSet?S.sets[0].ev.map(e=>e.pos||null):null'); assert mine == [pos, None], mine
+run('Sync: die Aufstellung je Eingabe geht in die Tabelle und kommt unverändert zurück', t_linpos)
+
 def t_conflict(br):
     st = state(players=7); st['players'][3]['role'] = 'ZP'
     a = device(br, st); a.evaluate('pushAll()'); a.wait_for_timeout(600); start_set(a, 'Annahme'); a.wait_for_timeout(1500); do_sync(a)

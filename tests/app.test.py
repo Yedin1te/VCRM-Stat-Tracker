@@ -425,7 +425,7 @@ def _(pg):
 
 @check('Alte Beschriftungen aus der Tabelle (Ok, Recycle) werden weiterhin gelesen')
 def _(pg):
-    body = {'players': [{'id': 'p1', 'name': 'A', 'nr': '1', 'role': ''}], 'games': [{'id': 'g1', 'opp': 'A', 'date': '2026-01-01'}], 'ver': 6,
+    body = {'players': [{'id': 'p1', 'name': 'A', 'nr': '1', 'role': ''}], 'games': [{'id': 'g1', 'opp': 'A', 'date': '2026-01-01'}], 'ver': 7,
             'sets': [{'id': 's1', 'gid': 'g1', 'opp': 'A', 'date': '2026-01-01', 'serve': 'Aufschlag', 'rot': 1, 'act': ['p1'], 'pos': [], 'rl': {}}],
             'events': [{'id': 'e1', 'sid': 's1', 'p': 'p1', 'bereich': 'Annahme', 'ergebnis': 'Ok', 'rot': 1, 't': 1}, {'id': 'e2', 'sid': 's1', 'p': 'p1', 'bereich': 'Angriff', 'ergebnis': 'Recycle', 'rot': 1, 't': 2},
                        {'id': 'e3', 'sid': 's1', 'p': 'p1', 'bereich': 'Annahme', 'ergebnis': 'Gut', 'rot': 1, 't': 3}, {'id': 'e4', 'sid': 's1', 'p': 'p1', 'bereich': 'Angriff', 'ergebnis': 'Ohne Wirkung', 'rot': 1, 't': 4}]}
@@ -531,7 +531,7 @@ def _(pg):
     assert sd['c']['att'] == [1, 2, 2, 5, 1] and sd['c']['rec'] == [1, 1, 1, 3] and sd['c']['srv'][3] == 1, sd['c']          # Fehler, ohne Wirkung, Wirkung, Punkt, Block
     assert sum(sd['t']['att']) >= sum(sd['c']['att']) and len(sd['t']['rec']) == 4 and len(sd['t']['srv']) == 4, sd['t']
     txt = svg_text(pg)
-    for w in ['Annahme', 'Angriff', 'Aufschlag', 'Effizienz', 'Plus / Minus', 'Saldo', 'Quoten', 'Kill %', 'Fehler %', 'Fehl.', 'Schl.', 'Gut', 'Perf.', 'o. W.', 'Wirk.', 'Punkt', 'Block', 'Ass', 'Team', 'Annahme-Verteilung', 'Angriffsverteilung', 'Sideout-Quote je Läufer', 'Gegner']:
+    for w in ['Annahme', 'Angriff', 'Aufschlag', 'Effizienz', 'Plus / Minus', 'Saldo', 'Annahme-Quote', 'Angriff-Quote', 'Perf. %', 'Kill %', 'Fehl. %', 'Fehl.', 'Schl.', 'Gut', 'Perf.', 'o. W.', 'Wirk.', 'Punkt', 'Block', 'Ass', 'Team', 'Annahme-Verteilung', 'Angriffsverteilung', 'Sideout-Quote je Läufer', 'Gegner']:
         assert w in txt, w
     assert pg.locator('svg.sheet').count() == 2 and not pg.errs   # Seite 1 und Zuspiel-Seite
     pg.locator('[data-sel=fset]').select_option('s:s2'); pg.wait_for_timeout(200)
@@ -575,6 +575,17 @@ def _(pg):
     assert '57%' in cells and '14%' in cells, cells      # 4/7 und 1/7
     assert not pg.errs
 
+
+@check('Auswertungsblatt: Annahme-Quoten (Perfekt-Anteil, Fehler-Anteil) je Spieler, getrennt von den Angriff-Quoten', desktop=True)
+def _(pg):
+    E = lambda i, r: {'id': f'a{i}', 'p': 'p1', 'c': 'rec', 'r': r, 'rot': 1, 't': i}
+    s = mkset(1); s['ev'] = [E(1, 'perf'), E(2, 'perf'), E(3, 'ok'), E(4, 'bad'), E(5, 'err')]     # 5 Annahmen: 40 % perfekt, 20 % Fehler
+    open_eval(pg, state(sets=[s]), 'g:g1')
+    cells = pg.evaluate("[...document.querySelector('svg.sheet').querySelectorAll('text')].map(t=>t.textContent)")
+    assert '40%' in cells and '20%' in cells, cells
+    assert cells.index('Annahme-Quote') < cells.index('Angriff-Quote'), 'beide Gruppen müssen getrennt beschriftet sein'
+    assert 'Quoten' not in cells, 'die unklare Sammelüberschrift „Quoten“ darf es nicht mehr geben'
+
 @check('Zuspiel: Killquote nach Annahme (erster Angriff) und Werte je Zuspieler werden richtig gezählt', desktop=True)
 def _(pg):
     E = lambda i, p, c, r: {'id': f'z{i}', 'p': p, 'c': c, 'r': r, 'rot': 1, 't': i}
@@ -590,10 +601,14 @@ def _(pg):
     assert q['n'] == [1, 1, 1] and q['a'] == [1, 1, 1] and q['k'] == [1, 0, 0] and q['w'] == [0, 1, 0] and q['o'] == [0, 0, 1] and q['e'] == [0, 0, 0], q
     assert len(z['rows']) == 1, z['rows']
     r = z['rows'][0]
-    assert r['id'] == 'p1' and (r['att'], r['pt'], r['eff'], r['err'], r['ace'], r['blk']) == (5, 2, 1, 1, 1, 0), r
+    assert r['id'] == 'p1' and (r['att'], r['pt'], r['eff'], r['err'], r['owk']) == (5, 2, 1, 1, 1), r
+    assert r['att'] == r['err'] + r['owk'] + r['eff'] + r['pt'], 'Angriffe müssen die Summe aus Fehler, ohne Wirkung, Wirkung und Punkt sein'
+    assert 'ace' not in r and 'blk' not in r
     assert r['r'] == [{'a': 1, 'k': 1}, {'a': 1, 'k': 0}, {'a': 1, 'k': 0}], r['r']
     txt = pg.evaluate("document.querySelectorAll('svg.sheet')[1].textContent")
-    for w in ['Zuspiel', 'Killquote nach Annahme', 'Perfekt', 'Gut', 'Schlecht', 'Direkte Punkte', 'n. Perfekt', '#1 ']: assert w in txt, w
+    for w in ['Zuspiel', 'Killquote nach Annahme', 'Perfekt', 'Gut', 'Schlecht', 'o. W.', 'n. Perfekt', '#1 ']: assert w in txt, w
+    cells = pg.evaluate("[...document.querySelectorAll('svg.sheet')[1].querySelectorAll('text')].map(t=>t.textContent)")
+    assert not {'Block', 'Ass', 'Direkte Punkte'} & set(cells), 'Block/Ass gehören nicht in die Zuspiel-Tabelle'
     assert pg.locator('[data-act=shareimg2]').count() == 1 and not pg.errs
 
 @check('Zuspiel: mehrere oder kein Zuspieler im Satz werden getrennt ausgewiesen, Seite fehlt ohne Angriffe', desktop=True)
@@ -651,6 +666,91 @@ def _(pg):
     open_eval(pg, stats_state()); assert pg.locator('details.evd[open]').count() == 0
     tap(pg, 'details.evd > summary'); assert pg.locator('details.evd[open]').count() == 1
     pg.evaluate('render()'); pg.wait_for_timeout(100); assert pg.locator('details.evd[open]').count() == 1
+
+
+FAKE_SR = """window.SpeechRecognition=class{start(){window.__rec=this}stop(){}};
+window.__say=t=>{const r=window.__rec,x=[{transcript:t}];x.isFinal=true;r.onresult({resultIndex:0,results:[x]})};"""
+def vpage(pg, serve='Annahme'):
+    pg.add_init_script(FAKE_SR); open_app(pg, state(players=20)); start_set(pg, serve)
+def vparse_(pg, text):
+    return pg.evaluate("t=>vparse(t,curSet()||{pos:[]}).map(a=>a.ok?[a.c,a.r,a.p]:['x',a.label])", text)
+
+@check('Sprache: Beispielsatz wird in drei Eingaben zerlegt')
+def _(pg):
+    vpage(pg)
+    got = vparse_(pg, 'gute Annahme von 14, wirkungsloser Angriff von 3 und Angriffspunkt von 19')
+    assert got == [['rec', 'ok', 'p14'], ['att', 'rec', 'p3'], ['att', 'pt', 'p19']], got
+
+@check('Sprache: Wortschatz Annahme/Angriff/Aufschlag/Spielstand')
+def _(pg):
+    vpage(pg)
+    cases = {'perfekte Annahme von 7': [['rec', 'perf', 'p7']], 'schlechte Annahme von 7': [['rec', 'bad', 'p7']],
+             'Annahmefehler 6': [['rec', 'err', 'p6']], 'sehr gute Annahme von 2': [['rec', 'perf', 'p2']],
+             'Angriff mit Wirkung von 5': [['att', 'eff', 'p5']], 'Angriff Fehler von 6': [['att', 'err', 'p6']],
+             'Angriff geblockt von 6': [['att', 'err', 'p6']], 'Block von 5': [['att', 'blk', 'p5']],
+             'wirkungsloser Angriff von 8': [['att', 'rec', 'p8']], 'Ass von 5': [['srv', 'ace', 'p5']],
+             'Aufschlag ohne Wirkung von 4': [['srv', 'none', 'p4']], 'Aufschlag mit Wirkung von 4': [['srv', 'eff', 'p4']],
+             'Aufschlagfehler von 9': [['srv', 'err', 'p9']], 'Gegnerfehler': [['sc', 'oerr', '']],
+             'Punkt für uns': [['sc', 'us', '']], 'Punkt Gegner': [['sc', 'opp', '']],
+             'perfekte Annahme von 7 und 9': [['rec', 'perf', 'p7'], ['rec', 'perf', 'p9']],
+             'perfekte Annahme von vierzehn': [['rec', 'perf', 'p14']]}
+    for text, want in cases.items():
+        got = vparse_(pg, text); assert got == want, (text, got)
+
+@check('Sprache: unbekannte Nummer, fehlendes Ergebnis, Unsinn werden nicht gebucht')
+def _(pg):
+    vpage(pg)
+    for text in ['perfekte Annahme von 99', 'Annahme von 4', 'Angriff 4', 'das Wetter ist schön']:
+        got = vparse_(pg, text); assert got and all(g[0] == 'x' for g in got), (text, got)
+
+@check('Sprache: Aufschlag ohne Nummer nimmt den aktuellen Aufschläger')
+def _(pg):
+    vpage(pg, 'Aufschlag')
+    assert vparse_(pg, 'Ass') == [['srv', 'ace', 'p1']], vparse_(pg, 'Ass')
+
+@check('Sprache: Ansage wird nach 2 s automatisch gebucht, Punkte und Rotation laufen mit')
+def _(pg):
+    vpage(pg); tap(pg, '[data-act=mic]')
+    pg.evaluate("window.__say('Angriffspunkt von 3')"); pg.wait_for_timeout(300)
+    assert 'Angriff Punkt' in pg.locator('.vp').inner_text() and score(pg) == '0 : 0'
+    pg.wait_for_timeout(2300)
+    assert score(pg) == '1 : 0' and rot(pg) == '6', (score(pg), rot(pg))
+    assert pg.locator('.vbar').inner_text().count('✓') == 1 and not pg.errs
+
+@check('Sprache: Verwerfen bucht nichts, Jetzt buchen sofort, zweite Ansage bucht die erste')
+def _(pg):
+    vpage(pg); tap(pg, '[data-act=mic]')
+    pg.evaluate("window.__say('Punkt für uns')"); pg.wait_for_timeout(200); tap(pg, '[data-act=vcancel]'); pg.wait_for_timeout(2500)
+    assert score(pg) == '0 : 0'
+    pg.evaluate("window.__say('Punkt für uns')"); pg.wait_for_timeout(200); tap(pg, '[data-act=vnow]')
+    assert score(pg) == '1 : 0'
+    pg.evaluate("window.__say('Punkt für uns')"); pg.wait_for_timeout(200)
+    pg.evaluate("window.__say('Punkt Gegner')"); pg.wait_for_timeout(200)
+    assert score(pg) == '2 : 0'; pg.wait_for_timeout(2300); assert score(pg) == '2 : 1'
+
+@check('Sprache: ohne Spracherkennung im Browser erscheint ein Hinweis statt eines Fehlers')
+def _(pg):
+    pg.add_init_script('window.SpeechRecognition=undefined;window.webkitSpeechRecognition=undefined')
+    open_app(pg, state(players=20)); start_set(pg, 'Annahme'); tap(pg, '[data-act=mic]'); pg.wait_for_timeout(200)
+    assert 'nicht unterstützt' in pg.locator('#toast').inner_text() and not pg.errs
+
+@check('Aufstellung: jede Eingabe speichert die Spieler auf dem Feld, sie wandert mit der Rotation')
+def _(pg):
+    open_app(pg, state(players=8)); start_set(pg, 'Annahme')
+    r = pg.evaluate("""(()=>{const s=curSet(),p0=padPos(s.pos);addEv(s,{p:'p1',c:'att',r:'pt'});addEv(s,{p:'p1',c:'rec',r:'perf'});
+      return{p0,e:s.ev.map(e=>e.pos),rot:rotPos(p0),saved:JSON.parse(localStorage.getItem('vbtracker1')).sets[0].ev.map(e=>e.pos)}})()""")
+    assert any(r['p0']), 'Testaufstellung ist leer'
+    assert r['e'][0] == r['p0'] and r['e'][1] == r['rot'], r        # Punkt nach Annahme = Side-out: danach ist rotiert
+    assert r['saved'] == r['e'], 'Aufstellung muss gespeichert werden'
+
+@check('Aufstellung: Zuspieler wird aus der gespeicherten Aufstellung erkannt, auch bei zwei Zuspielern im Satz', desktop=True)
+def _(pg):
+    E = lambda i, p, c, r, pos: {'id': f'u{i}', 'p': p, 'c': c, 'r': r, 'rot': 1, 't': i, 'pos': pos}
+    s = mkset(1); s['act'] = ['p1', 'p2', 'p3']; s['rl'] = {'p1': 'ZP', 'p2': 'ZP', 'p3': 'AA'}
+    s['ev'] = [E(1, 'p3', 'rec', 'perf', ['p2', 'p3', '', '', '', '']), E(2, 'p3', 'att', 'pt', ['p2', 'p3', '', '', '', '']),
+               E(3, 'p3', 'rec', 'ok', ['p1', 'p3', '', '', '', '']), E(4, 'p3', 'att', 'pt', ['p1', 'p3', '', '', '', ''])]
+    open_eval(pg, state(sets=[s]), 'g:g1')
+    rows = pg.evaluate('sheetData().zp.rows.map(r=>[r.id,r.att])'); assert sorted(rows) == [['p1', 1], ['p2', 1]], rows
 
 @check('Aufschlagrecht wechselt mit jedem Satz')
 def _(pg):
@@ -811,7 +911,7 @@ def sync_page(pg, handler, st=None):
 
 @check('Manipulierte Server-Antwort (Prototype Pollution, Müll)')
 def _(pg):
-    body = {'ver': 6, 'players': [{'id': 'p1', 'name': EVIL, 'nr': '1'}], 'games': [{'id': 'g1', 'opp': 'A', 'date': '2026-01-01'}],
+    body = {'ver': 7, 'players': [{'id': 'p1', 'name': EVIL, 'nr': '1'}], 'games': [{'id': 'g1', 'opp': 'A', 'date': '2026-01-01'}],
             'sets': [{'id': 's1', 'gid': 'g1', 'opp': 'A', 'date': '2026-01-01', 'serve': 'Aufschlag', 'rot': 99, 'act': ['p1']}],
             'events': [{'id': 'e1', 'sid': '__proto__', 'p': 'p1', 'bereich': 'Annahme', 'ergebnis': 'Ok', 'rot': 1, 't': 1},
                        {'id': 'e2', 'sid': 'constructor', 'p': 'p1', 'bereich': '__proto__', 'ergebnis': 'x', 'rot': 1, 't': 1},
@@ -839,7 +939,7 @@ def _(pg):
     def h(r):
         seen.append((r.request.headers.get('content-type', ''), r.request.post_data))
         r.fulfill(status=200, content_type='application/json', headers={'access-control-allow-origin': '*'},
-                  body=json.dumps({'ver': 6, 'players': [{'id': 'pz', 'name': 'Zed', 'nr': '9'}], 'games': [], 'sets': [], 'events': []}))
+                  body=json.dumps({'ver': 7, 'players': [{'id': 'pz', 'name': 'Zed', 'nr': '9'}], 'games': [], 'sets': [], 'events': []}))
     sync_page(pg, h, st=state(players=0))
     tap(pg, 'nav [data-act=tab][data-v=pl]'); pg.fill('#pname', 'Zed'); pg.fill('#pnr', '9'); tap(pg, '[data-act=addp]'); pg.wait_for_timeout(1500)
     assert seen and seen[-1][0].startswith('text/plain'), seen
