@@ -83,8 +83,27 @@ def case(name, w, h, rot, view):
 SETUPS = [('Hochformat', 390, 844, False), ('Querformat', 844, 390, False), ('Gedreht ⟳', 390, 844, True),
           ('Kleines Hochformat', 360, 640, False), ('Kleines Querformat', 667, 375, False), ('Kleines Gedreht ⟳', 360, 640, True)]
 VIEWS = ['Spieler', 'Spiel', 'Auswertung (Spiel)', 'Auswertung (Alle)', 'Einstellungen', 'Anleitung']
+def fit_case(name, w, h, rot):
+    """Querformat: Das Auswertungsblatt füllt die ganze Breite, nichts wird abgeschnitten, oben bleibt Platz für die Tabelle, Leistenbeschriftungen passen."""
+    err = ''
+    try:
+        with sync_playwright() as p:
+            br = p.chromium.launch(); ctx = br.new_context(viewport={'width': w, 'height': h}, is_mobile=True, has_touch=True); pg = ctx.new_page()
+            pg.add_init_script("localStorage.setItem('vbpin','%s');localStorage.setItem('vbtracker1',%s);%s" % (PH, json.dumps(json.dumps(state())), "localStorage.setItem('vbrot','1');" if rot else ''))
+            pg.goto('file://' + APP); pg.wait_for_timeout(350); pg.locator('nav [data-act=tab][data-v=eval]').click(); pg.locator('[data-sel=fset]').select_option('g:g1'); pg.wait_for_timeout(350)
+            m = pg.evaluate("""(()=>{const w=document.querySelector('.sheetwrap'),s=w.querySelector('svg'),sh=Math.min(innerWidth,innerHeight);
+              return{wc:w.clientWidth,ws:w.scrollWidth,sw:s.clientWidth,top:w.offsetTop,short:sh,navCut:[...document.querySelectorAll('nav button')].filter(b=>b.scrollWidth>b.clientWidth+1).map(b=>b.textContent.trim())}})()""")
+            if m['ws'] > m['wc'] + 1: err = f"Blatt ist breiter als der Bildschirm ({m['ws']} > {m['wc']}) und wird abgeschnitten"
+            elif m['sw'] < m['wc'] - 2: err = f"Blatt nutzt die Breite nicht ({m['sw']} von {m['wc']})"
+            elif m['top'] > 0.45 * m['short']: err = f"Blatt beginnt zu weit unten ({m['top']} von {m['short']})"
+            elif m['navCut']: err = 'Beschriftung in der Leiste abgeschnitten: ' + ', '.join(m['navCut'])
+            br.close()
+    except Exception as e: err = f'{type(e).__name__}: {str(e)[:160]}'
+    RES.append((f'{name:22s} · Auswertung nutzt den Bildschirm', not err, err))
+
 if __name__ == '__main__':
     for n, w, h, rot in SETUPS:
         for v in VIEWS: case(n, w, h, rot, v)
+    for n, w, h, rot in [x for x in SETUPS if x[1] > x[2] or x[3]]: fit_case(n, w, h, rot)
     for n, ok, m in RES: print(('PASS ' if ok else 'FAIL ') + n + ('' if ok else '  -> ' + m))
     fails = [r for r in RES if not r[1]]; print(f'\n{len(RES) - len(fails)}/{len(RES)} bestanden'); sys.exit(1 if fails else 0)
