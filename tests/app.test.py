@@ -611,13 +611,16 @@ def _(pg):
     assert not {'Block', 'Ass', 'Direkte Punkte'} & set(cells), 'Block/Ass gehören nicht in die Zuspiel-Tabelle'
     assert pg.locator('[data-act=shareimg2]').count() == 1 and not pg.errs
 
-@check('Zuspiel: mehrere oder kein Zuspieler im Satz werden getrennt ausgewiesen, Seite fehlt ohne Angriffe', desktop=True)
+@check('Zuspiel: ist der Zuspieler nicht erkennbar, fehlen diese Angriffe in der Zuspieler-Tabelle (mit Hinweis), Seite fehlt ohne Angriffe', desktop=True)
 def _(pg):
     E = lambda i, p, c, r: {'id': f'w{i}', 'p': p, 'c': c, 'r': r, 'rot': 1, 't': i}
     s1 = mkset(1); s1['act'] = ['p1', 'p2']; s1['rl'] = {'p1': 'ZP', 'p2': 'ZP'}; s1['ev'] = [E(1, 'p3', 'rec', 'perf'), E(2, 'p3', 'att', 'pt')]
     s2 = mkset(2); s2['act'] = ['p3']; s2['rl'] = {'p3': 'AA'}; s2['ev'] = [E(3, 'p3', 'rec', 'ok'), E(4, 'p3', 'att', 'pt')]
     st = state(players=3); st['sets'] = [s1, s2]; open_eval(pg, st, 'g:g1')
-    ids = pg.evaluate('sheetData().zp.rows.map(r=>r.id)'); assert sorted(ids) == ['x0', 'xm'], ids
+    z = pg.evaluate('sheetData().zp'); assert z['rows'] == [] and z['skipped'] == 2, z['rows']         # mehrere bzw. kein Zuspieler: nichts wird einem Zuspieler zugeschrieben
+    txt = pg.evaluate("document.querySelectorAll('svg.sheet')[1].textContent")
+    assert 'Killquote nach Annahme' in txt and 'Zuspieler-Werte entfallen' in txt and 'für 2 Angriffe' in txt, txt[:300]
+    assert 'mehrere Zuspieler' not in txt and 'ohne Zuspieler' not in txt and 'n. Perfekt' not in txt, 'keine Zuspieler-Tabelle ohne erkennbaren Zuspieler'
     s3 = mkset(1); s3['ev'] = [E(5, 'p1', 'rec', 'perf')]; st2 = state(players=3); st2['sets'] = [s3]
     open_eval(pg, st2, 'g:g1'); assert pg.locator('svg.sheet').count() == 1 and pg.locator('[data-act=shareimg2]').count() == 0
 
@@ -630,7 +633,7 @@ def _(pg):
         s = mkset(i); s['act'] = ['p1']; s['rl'] = {}; s['ev'] = []
         for k in range(30): s['ev'] += [{'id': f'f{i}_{k}a', 'p': 'p2', 'c': 'rec', 'r': ['perf', 'ok', 'bad'][k % 3], 'rot': 1, 't': i * 100 + k * 2}, {'id': f'f{i}_{k}b', 'p': 'p3', 'c': 'att', 'r': ['pt', 'eff', 'rec', 'err'][k % 4], 'rot': 1, 't': i * 100 + k * 2 + 1}]
         sets.append(s)
-    sets[1]['act'] = ['p1', 'p2']; sets[2]['act'] = []     # mehrere / kein Zuspieler -> Zusatzzeilen
+    sets[1]['act'] = ['p1', 'p2']; sets[2]['act'] = []; sets[3]['act'] = ['p3']     # Satz 2: mehrere, Satz 3: kein Zuspieler (fehlen in der Tabelle); Satz 4: anderer Zuspieler
     st['sets'] = sets; open_eval(pg, st, 'g:g1')
     bad = pg.evaluate("""(()=>{const svg=document.querySelectorAll('svg.sheet')[1],vb=svg.viewBox.baseVal,rects=[...svg.querySelectorAll('rect')].map(r=>({x:+r.getAttribute('x')||0,y:+r.getAttribute('y')||0,w:+r.getAttribute('width'),h:+r.getAttribute('height')})).filter(r=>r.w<vb.width*0.9&&r.h>1),bad=[];
       svg.querySelectorAll('text').forEach(t=>{const b=t.getBBox(),cx=b.x+b.width/2,cy=b.y+b.height/2;
@@ -639,7 +642,7 @@ def _(pg):
        if(inside&&(b.x<inside.x-.6||b.x+b.width>inside.x+inside.w+.6))bad.push('Kästchen: '+t.textContent)});
       return bad})()""")
     assert not bad, bad[:8]
-    assert pg.evaluate('sheetData().zp.rows.length') >= 3 and not pg.errs
+    assert pg.evaluate('sheetData().zp.rows.length') == 2 and pg.evaluate('sheetData().zp.skipped') > 0 and not pg.errs
 
 @check('Auswertungsblatt: alle Schriften bleiben in ihren Kästchen (lange Namen, 5 Sätze, 14 Spieler)', desktop=True)
 def _(pg):
@@ -668,8 +671,10 @@ def _(pg):
     pg.evaluate('render()'); pg.wait_for_timeout(100); assert pg.locator('details.evd[open]').count() == 1
 
 
-FAKE_SR = """window.SpeechRecognition=class{start(){window.__rec=this}stop(){}};
-window.__say=t=>{const r=window.__rec,x=[{transcript:t}];x.isFinal=true;r.onresult({resultIndex:0,results:[x]})};"""
+FAKE_SR = """window.__recs=[];window.__res=[];
+window.SpeechRecognition=class{start(){window.__rec=this;window.__recs.push(this);this.onstart&&this.onstart()}stop(){}abort(){}};
+window.__say=(t,idx)=>{const r=window.__rec,x=[{transcript:t}];x.isFinal=true;window.__res.push(x);r.onresult({resultIndex:idx===undefined?window.__res.length-1:idx,results:window.__res})};
+window.__again=()=>{window.__rec.onresult({resultIndex:0,results:window.__res})};"""
 def vpage(pg, serve='Annahme'):
     pg.add_init_script(FAKE_SR); open_app(pg, state(players=20)); start_set(pg, serve)
 def vparse_(pg, text):
@@ -724,7 +729,7 @@ def _(pg):
     assert score(pg) == '0 : 0'
     pg.evaluate("window.__say('Punkt für uns')"); pg.wait_for_timeout(200); tap(pg, '[data-act=vnow]')
     assert score(pg) == '1 : 0'
-    pg.evaluate("window.__say('Punkt für uns')"); pg.wait_for_timeout(200)
+    pg.evaluate("window.__say('Gegnerfehler')"); pg.wait_for_timeout(200)
     pg.evaluate("window.__say('Punkt Gegner')"); pg.wait_for_timeout(200)
     assert score(pg) == '2 : 0'; pg.wait_for_timeout(2300); assert score(pg) == '2 : 1'
 
@@ -733,6 +738,33 @@ def _(pg):
     pg.add_init_script('window.SpeechRecognition=undefined;window.webkitSpeechRecognition=undefined')
     open_app(pg, state(players=20)); start_set(pg, 'Annahme'); tap(pg, '[data-act=mic]'); pg.wait_for_timeout(200)
     assert 'nicht unterstützt' in pg.locator('#toast').inner_text() and not pg.errs
+
+
+@check('Sprache: dieselbe Ansage wird auch bei mehrfach gelieferten Ergebnissen nur einmal gebucht')
+def _(pg):
+    vpage(pg); tap(pg, '[data-act=mic]')
+    pg.evaluate("window.__say('perfekte Annahme von 4')"); pg.wait_for_timeout(150)
+    pg.evaluate("window.__again()"); pg.evaluate("window.__again()"); pg.evaluate("window.__say('perfekte Annahme von 4', 0)"); pg.wait_for_timeout(2600)
+    ev = pg.evaluate("curSet().ev.map(e=>e.c+e.r+e.p)"); assert ev == ['recperfp4'], ev
+
+@check('Sprache: Ansage kommt noch einmal mit dem Satz davor, nur der neue Teil wird gebucht')
+def _(pg):
+    vpage(pg); tap(pg, '[data-act=mic]')
+    pg.evaluate("window.__say('perfekte Annahme von 4')"); pg.wait_for_timeout(300)
+    pg.evaluate("window.__say('perfekte Annahme von 4 und Angriffspunkt von 7')"); pg.wait_for_timeout(2600)
+    ev = pg.evaluate("curSet().ev.map(e=>e.c+e.r+e.p)"); assert ev == ['recperfp4', 'attptp7'], ev
+
+@check('Sprache: gleiche Ansage nach Verwerfen oder nach Pause zählt wieder, Mikro aus/an startet keinen zweiten Erkenner')
+def _(pg):
+    vpage(pg); tap(pg, '[data-act=mic]')
+    pg.evaluate("window.__say('Punkt für uns')"); pg.wait_for_timeout(150); tap(pg, '[data-act=vcancel]')
+    pg.evaluate("window.__say('Punkt für uns')"); pg.wait_for_timeout(2500); assert score(pg) == '1 : 0', score(pg)      # nach Verwerfen darf sie wiederholt werden
+    pg.wait_for_timeout(1000)
+    pg.evaluate("window.__say('Punkt für uns')"); pg.wait_for_timeout(2500); assert score(pg) == '2 : 0', score(pg)      # echte Wiederholung nach Pause
+    tap(pg, '[data-act=mic]'); tap(pg, '[data-act=mic]')                                                                 # aus und wieder an
+    old, new = pg.evaluate("[window.__recs[0].onresult===null&&window.__recs[0].onend===null,window.__recs.length]")
+    assert old and new == 2, (old, new)
+    pg.evaluate("window.__say('Punkt Gegner')"); pg.wait_for_timeout(2500); assert score(pg) == '2 : 1', score(pg)
 
 @check('Aufstellung: jede Eingabe speichert die Spieler auf dem Feld, sie wandert mit der Rotation')
 def _(pg):
