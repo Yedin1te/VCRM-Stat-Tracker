@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-aVZXmBXeELncEMufISyOTcgo4tySYgTZHFLH6kl/lmo='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-SZmqGnDaSHvqg6cuxB/RlQDPt6eFLGi4bDfZi57H8eM='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#17202a">
@@ -85,8 +85,8 @@ body::after{content:"";position:fixed;right:-46px;bottom:64px;width:200px;height
 .land .hb{min-height:38px}.land .hb span{font-size:11px}.land .hb b{font-size:19px}
 .land .pr{grid-template-columns:106px 1fr;padding:2px 0 2px 5px}.land .pn{font-size:14px}.land .pr.gs{margin-top:5px}
 .land .card{margin-bottom:8px}
-.land nav{top:0;right:auto;width:calc(64px + env(safe-area-inset-left,0px));flex-direction:column;gap:4px;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px)) calc(4px + env(safe-area-inset-left,0px));border-top:0;border-right:1px solid var(--bd)}
-.land nav button{flex:1 1 0;padding:4px 2px;font-size:11px;white-space:normal;line-height:1.1}
+.land nav{top:0;right:auto;width:calc(64px + env(safe-area-inset-left,0px));flex-direction:column;gap:4px;padding:6px 2px calc(6px + env(safe-area-inset-bottom,0px)) calc(2px + env(safe-area-inset-left,0px));border-top:0;border-right:1px solid var(--bd)}
+.land nav button{flex:1 1 0;padding:4px 0;font-size:9.5px;white-space:normal;line-height:1.1;overflow:hidden}
 .land nav button[style]{flex:0 0 44px}
 html.rot{padding:0;overflow:hidden}   /* sonst reicht der Browser overflow vom body an das Fenster weiter und die gedrehte Seite lässt sich nicht scrollen */
 html.rot body{position:fixed;top:0;left:0;width:var(--vh);height:var(--vw);transform-origin:0 0;transform:translateX(var(--vw)) rotate(90deg);overflow:auto}
@@ -120,7 +120,10 @@ html.lap .gl{max-width:1150px}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 14px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
 #toast.show{opacity:1}
 .sheetwrap{overflow-x:auto;background:#fff;border:1px solid var(--bd);border-radius:10px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
-.sheetbox{min-width:900px}.sheetbox svg{display:block;width:100%;height:auto}
+.sheetbox{min-width:900px}
+.land .sheetbox{min-width:0}   /* Querformat: Blatt über die ganze Breite, nichts wird abgeschnitten */
+.land .evtop{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;padding:8px 12px}.land .evtop h2{margin:0;flex:0 0 auto}.land .evtop select{flex:1 1 auto;min-width:140px;width:auto}.land .evtop button{flex:0 0 auto;width:auto;margin:0!important;padding:10px 16px;white-space:nowrap}.land .evtop .evhint{display:none}
+.land .sheetwrap{margin-bottom:8px}.sheetbox svg{display:block;width:100%;height:auto}
 .evd{margin-bottom:12px}.evd>summary{font-weight:700;padding:10px 4px;cursor:pointer}
 .vbar{padding:8px}.vlive{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0 8px;font-size:12px}
 .vp{margin-top:6px}.vp .pill{white-space:normal;display:inline-block;margin:2px 2px 0 0}
@@ -563,7 +566,7 @@ async function shareImage(page){
 function evalv(){
  const sets=S.sets;
  let ev=[];sets.forEach(s=>{if(fSet==='all'||fSet==='s:'+s.id||fSet==='g:'+s.gid)ev=ev.concat(s.ev)});
- let h=`<div class="card"><h2>Auswertung</h2><select data-sel="fset"><option value="all">Alle Spiele</option>${S.games.slice().reverse().map(g=>`<optgroup label="${gname(g)}"><option value="g:${g.id}" ${fSet==='g:'+g.id?'selected':''}>Gesamtes Spiel</option>${sets.filter(s=>s.gid===g.id).map(s=>`<option value="s:${s.id}" ${fSet==='s:'+s.id?'selected':''}>Satz ${nrOf(s)}</option>`).join('')}</optgroup>`).join('')}</select><button class="pri" data-act="shareimg" style="margin-top:10px">Als Bild teilen</button><div class="mu" style="margin-top:8px">Farben zeigen ab 3 Aktionen, ob ein Wert stark (grün), mittel (gelb) oder schwach (rot) ist. Das Blatt passt am besten im Querformat (⟳) oder du wischst seitlich.</div></div>`;
+ let h=`<div class="card evtop"><h2>Auswertung</h2><select data-sel="fset"><option value="all">Alle Spiele</option>${S.games.slice().reverse().map(g=>`<optgroup label="${gname(g)}"><option value="g:${g.id}" ${fSet==='g:'+g.id?'selected':''}>Gesamtes Spiel</option>${sets.filter(s=>s.gid===g.id).map(s=>`<option value="s:${s.id}" ${fSet==='s:'+s.id?'selected':''}>Satz ${nrOf(s)}</option>`).join('')}</optgroup>`).join('')}</select><button class="pri" data-act="shareimg" style="margin-top:10px">Als Bild teilen</button><div class="mu evhint" style="margin-top:8px">Farben zeigen ab 3 Aktionen, ob ein Wert stark (grün), mittel (gelb) oder schwach (rot) ist. Das Blatt passt am besten im Querformat (⟳) oder du wischst seitlich.</div></div>`;
  const sd=sheetData();if(sd)h+=`<div class="sheetwrap"><div class="sheetbox">${sheetSvg(sd,{logo:LOGO.url,ball:!LOGO.url})}</div></div>`;
  if(sd&&sd.zp.has)h+=`<div class="sheetwrap"><div class="sheetbox">${zuspielSvg(sd,{logo:LOGO.url,ball:!LOGO.url})}</div></div><button class="pri" data-act="shareimg2" style="margin-bottom:12px">Zuspiel-Seite als Bild teilen</button>`;
  let dtl='';
