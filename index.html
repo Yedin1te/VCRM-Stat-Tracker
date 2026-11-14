@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-YceTCtmzki4lhWpIf/R8Z3z4jzptDOWMgF9U2pt5Hwc='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-aVZXmBXeELncEMufISyOTcgo4tySYgTZHFLH6kl/lmo='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#17202a">
@@ -88,8 +88,9 @@ body::after{content:"";position:fixed;right:-46px;bottom:64px;width:200px;height
 .land nav{top:0;right:auto;width:calc(64px + env(safe-area-inset-left,0px));flex-direction:column;gap:4px;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px)) calc(4px + env(safe-area-inset-left,0px));border-top:0;border-right:1px solid var(--bd)}
 .land nav button{flex:1 1 0;padding:4px 2px;font-size:11px;white-space:normal;line-height:1.1}
 .land nav button[style]{flex:0 0 44px}
-html.rot{padding:0}
+html.rot{padding:0;overflow:hidden}   /* sonst reicht der Browser overflow vom body an das Fenster weiter und die gedrehte Seite lässt sich nicht scrollen */
 html.rot body{position:fixed;top:0;left:0;width:var(--vh);height:var(--vw);transform-origin:0 0;transform:translateX(var(--vw)) rotate(90deg);overflow:auto}
+html.rot body::after{right:0}   /* sonst ragt die Zierde über den Rand und die gedrehte Seite lässt sich seitwärts schieben */
 html.rot .md{max-height:80vw}
 .pp{display:inline-block;min-width:15px;text-align:center;background:var(--bd);border-radius:4px;font-size:10px;font-weight:700}
 .pr{padding-left:5px}.srvr{box-shadow:inset 3px 0 0 var(--ac)}.srvr .pn{color:var(--ac);font-weight:700}
@@ -272,7 +273,7 @@ function helpHtml(){
  <p>Die Zeilen sind nach Rolle gruppiert (MB Mittelblocker, AA Außenangreifer, DI Diagonalangreifer, ZP Zuspieler, LI Libero) und innerhalb einer Rolle nach Rückennummer sortiert. Die kleine Zahl vorn ist die aktuelle Position.</p></details>
  <details><summary>Auswertung lesen</summary>
  <p>Oben wählst du, ob alle Spiele, ein ganzes Spiel oder ein einzelner Satz gezeigt wird. Darunter siehst du das Auswertungsblatt im A4-Querformat: oben Gegner, Datum und Ergebnis, dann eine Tabelle mit der Anzahl je Bewertung (Annahme: Fehler, Schlecht, Gut, Perfekt; Angriff und Aufschlag: Fehler, ohne Wirkung, mit Wirkung, Punkt bzw. Ass, beim Angriff auch Block), dahinter Effizienz und Plus/Minus, ganz unten die Teamwerte Annahme-Verteilung, Angriffsverteilung und Sideout-Quote je Läufer. Die Spalten „Annahme-Quote“ zeigen je Spieler den Anteil perfekter Annahmen und den Annahmefehler-Anteil (jeweils ÷ Annahmen). Die Spalten „Angriff-Quote“ zeigen Killquote (Punkte ÷ Angriffe) und Fehlerquote (Fehler ÷ Angriffe), Angriffe ohne Block. Die Zahlen gelten für die oben gewählte Auswahl (alle Spiele, ein Spiel oder ein Satz). Für einen einzelnen Satz wählst du ihn oben aus. Am Handy hilft das Querformat (⟳) oder seitliches Wischen. Die Karten „Punkte", „Plus/Minus" und die Einzelkarten stehen darunter im Bereich „Weitere Auswertungen".</p>
- <p><b>Zuspiel (zweite Seite):</b> Oben steht die Killquote nach Annahme: Bei Perfekt, Gut und Schlecht zählt nur der erste Angriff im Ballwechsel nach der Annahme (Punkt ÷ Angriffe). Darunter siehst du je Zuspieler alle Angriffe des Teams, solange er auf dem Feld stand: Angriffe gesamt = Fehler + ohne Wirkung + mit Wirkung + Punkt (Block zählt nicht), dazu die Killquote gesamt und nach jeder Annahme. Zuspieler ist der Spieler mit Rolle ZP, der gerade auf dem Feld steht. Die App speichert dafür bei jeder Eingabe die Aufstellung (Position 1 bis 6). Bei älteren Eingaben ohne gespeicherte Aufstellung gilt die Rolle ZP im Satz. Stehen dort mehrere oder keiner, erscheinen die Werte in der Zeile „mehrere/ohne Zuspieler“. Farben ab 3 Angriffen: grün ab 45 %, rot unter 25 %.</p>
+ <p><b>Zuspiel (zweite Seite):</b> Oben steht die Killquote nach Annahme: Bei Perfekt, Gut und Schlecht zählt nur der erste Angriff im Ballwechsel nach der Annahme (Punkt ÷ Angriffe). Darunter siehst du je Zuspieler alle Angriffe des Teams, solange er auf dem Feld stand: Angriffe gesamt = Fehler + ohne Wirkung + mit Wirkung + Punkt (Block zählt nicht), dazu die Killquote gesamt und nach jeder Annahme. Zuspieler ist der Spieler mit Rolle ZP, der gerade auf dem Feld steht. Die App speichert dafür bei jeder Eingabe die Aufstellung (Position 1 bis 6). Bei älteren Eingaben ohne gespeicherte Aufstellung gilt die Rolle ZP im Satz. Ist nicht erkennbar, wer gespielt hat (keine oder mehrere Zuspieler im Satz und keine gespeicherte Aufstellung), fehlen diese Angriffe in der Zuspieler-Tabelle, ein Hinweis nennt ihre Anzahl. Die Killquote nach Annahme oben ist davon nicht betroffen. Farben ab 3 Angriffen: grün ab 45 %, rot unter 25 %.</p>
  <p><b>Teamwerte:</b> Die Annahme-Verteilung zeigt, wie viele Annahmen Fehler, Schlecht, Gut oder Perfekt waren (auch je Satz). Die Angriffsverteilung zeigt den Anteil der Angriffe je Spieler. Sideout-Quote: Anteil der Ballwechsel nach gegnerischem Aufschlag, die wir gewonnen haben, je Läufer (Position des Zuspielers). 1st Ball: Anteil dieser Ballwechsel, die wir direkt mit dem ersten Angriff nach der Annahme gewonnen haben (Angriff „Punkt“, ohne Block und ohne Gegnerfehler). Break: dasselbe wie Sideout nach eigenem Aufschlag. Grün ab 65 %, rot unter 50 %, erst ab 3 Ballwechseln. Es zählen nur Ballwechsel mit erfasstem Punkt.</p>
  <p><b>Annahme:</b> Ø-Note und Anteil positiver Annahmen. <b>Angriff:</b> Punktquote und Fehlerquote, dazu die Zahl der Blockpunkte (die Quoten rechnen ohne Block). <b>Aufschlag:</b> Fehlerquote und „Wirkung+Ass", also der Anteil der Aufschläge, die Druck gemacht haben.</p>
  <p><b>Plus/Minus:</b> Plus sind direkte Punkte (Angriff „Punkt", Block, Ass), Minus sind eigene Fehler (Annahme-, Angriffs- und Aufschlagfehler). Der Saldo ist Plus minus Minus, grün über 0 und rot darunter. In den Karten sind die Spieler nach Saldo sortiert, im Blatt nach Rückennummer.</p>
@@ -384,9 +385,9 @@ function zuspielData(sets){   // erster Angriff nach der Annahme und Werte je Zu
    buf=[]};
   for(const e of s.ev){buf.push(e);if(ptOf(e.c,e.r))flush()}
   flush()});
- const nm=r=>r.id==='xm'?'mehrere Zuspieler':r.id==='x0'?'ohne Zuspieler':'#'+r.p.nr+' '+r.p.name;
- const rows=Object.values(zs).filter(r=>r.att>0||r.r.some(m=>m.a)).map(r=>Object.assign(r,{p:S.players.find(p=>p.id===r.id)||{name:'?',nr:''}})).map(r=>Object.assign(r,{label:nm(r)})).sort((a,b)=>(a.id[0]==='x')-(b.id[0]==='x')||a.label.localeCompare(b.label));
- return{byR,rows,has:byR.some(q=>q.a)||rows.some(r=>r.att>0)};
+ const nm=r=>'#'+r.p.nr+' '+r.p.name,skipped=['x0','xm'].reduce((a,k)=>a+(zs[k]?zs[k].att:0),0);   // Angriffe ohne erkennbaren Zuspieler stehen nicht in der Zuspieler-Tabelle
+ const rows=Object.values(zs).filter(r=>r.id[0]!=='x'&&(r.att>0||r.r.some(m=>m.a))).map(r=>Object.assign(r,{p:S.players.find(p=>p.id===r.id)||{name:'?',nr:''}})).map(r=>Object.assign(r,{label:nm(r)})).sort((a,b)=>a.label.localeCompare(b.label));
+ return{byR,rows,skipped,has:byR.some(q=>q.a)||rows.some(r=>r.att>0)};
 }
 function sheetData(){
  const sets=S.sets.filter(s=>fSet==='all'||fSet==='s:'+s.id||fSet==='g:'+s.gid);
@@ -516,6 +517,7 @@ function zuspielSvg(d,o){
   T(q.a?pc(q.k,q.a)+'  '+q.k+'/'+q.a:'–',X+cw0+bw+14,my,12,'700','#17202a','start',96)});
  y+=4*RH+26;
  // B) Zuspieler
+ if(z.rows.length){
  T('Zuspieler: Angriffe, Wirkung, Punkte und Killquote nach Annahme',X,y+10,15,'700','#17202a','start',CW);y+=26;
  const cb=[['Zuspieler',267,1],['Angriffe',80],['Fehler',80],['o. W.',80],['Wirkung',80],['Punkt',80],['Killquote',100],['n. Perfekt',100],['n. Gut',100],['n. Schlecht',100]];
  hdr(cb,y,X);y+=22;
@@ -529,9 +531,11 @@ function zuspielSvg(d,o){
   pill(pc(r.pt,r.att),gr(r.pt,r.att),x+50,my,100);x+=100;
   r.r.forEach(m=>{pill(m.a?pc(m.k,m.a)+' ('+m.k+'/'+m.a+')':'–',gr(m.k,m.a),x+50,my,100);x+=100})});
  y+=(z.rows.length+(z.rows.length>1?1:0))*RH;
+ }
+ if(z.skipped)T(z.rows.length?'Nicht in der Tabelle: ':'Zuspieler-Werte entfallen: ',X,y+14,12,'700','#6b7280','start',200),T('für '+z.skipped+' Angriffe war nicht erkennbar, wer gespielt hat (Rolle ZP fehlt, ist nicht eindeutig oder es gibt keine gespeicherte Aufstellung).',X+(z.rows.length?118:160),y+14,12,'400','#6b7280','start',CW-(z.rows.length?118:160)),y+=34;
  const H=Math.max(794,y+66);
  T('Killquote = Angriffe mit Punkt ÷ Angriffe · „nach Annahme“ zählt nur der erste Angriff im Ballwechsel nach der Annahme · Angriffe = Fehler + ohne Wirkung (o. W.) + Wirkung + Punkt, ohne Block',X,H-34,10,'400','#8a94a0','start',CW);
- T('Zuspieler = Spieler mit Rolle ZP auf dem Feld (gespeicherte Aufstellung; bei älteren Eingaben: Rolle ZP im Satz, sonst „mehrere/ohne Zuspieler“) · Farben ab 3 Angriffen: grün ab 45 %, rot unter 25 %',X,H-20,10,'400','#8a94a0','start',CW);
+ T('Zuspieler = Spieler mit Rolle ZP auf dem Feld (gespeicherte Aufstellung; bei älteren Eingaben: Rolle ZP im Satz). Ist er nicht erkennbar, fehlen die Angriffe in der Zuspieler-Tabelle · Farben ab 3 Angriffen: grün ab 45 %, rot unter 25 %',X,H-20,10,'400','#8a94a0','start',CW);
  T('Volleyball Tracker · '+new Date().toLocaleDateString('de-DE'),X,H-7,10,'700','#5b6770','start',CW);
  return svgWrap(out,W,H,o);
 }
@@ -673,7 +677,7 @@ function undo(s){
 }
 // ---------- Spracheingabe (Test): Ansagen wie „Perfekte Annahme von 14“ werden zu Eingaben ----------
 const NUMW={null:0,eins:1,zwei:2,zwo:2,drei:3,vier:4,'fünf':5,fuenf:5,sechs:6,sieben:7,acht:8,neun:9,zehn:10,elf:11,'zwölf':12,zwoelf:12,dreizehn:13,vierzehn:14,'fünfzehn':15,fuenfzehn:15,sechzehn:16,siebzehn:17,achtzehn:18,neunzehn:19,zwanzig:20,einundzwanzig:21,zweiundzwanzig:22,dreiundzwanzig:23,vierundzwanzig:24,'fünfundzwanzig':25};
-const V={on:false,live:'',log:[],pend:null,help:false,rec:null,tm:0};
+const V={on:false,live:'',log:[],pend:null,help:false,rec:null,tm:0,last:null};
 function vdet(w){
  const nums=(w.match(/\d+/g)||[]).map(Number),T=w.replace(/\d+/g,' ');
  if(/gegnerfehler|fehler (vom |von |des |der )?gegner/.test(T))return{c:'sc',r:'oerr',nums:[]};
@@ -706,15 +710,24 @@ function vparse(text,s){
  });
  return acts;
 }
+const vnorm=t=>String(t).toLowerCase().replace(/[.,;!?]/g,' ').replace(/\s+/g,' ').trim();
 function vhear(text){
  const s=curSet();if(!s)return;
+ // Dublettenschutz: manche Browser liefern dieselbe Ansage mehrfach oder noch einmal mit dem Satz davor
+ const n=vnorm(text),now=Date.now(),L=V.last;
+ if(!n)return;
+ if(L&&now-L.at<3000){
+  if(n===L.t||L.t.startsWith(n+' '))return;
+  if(n.startsWith(L.t+' ')){text=n.split(' ').slice(L.t.split(' ').length).join(' ');if(!text)return}
+ }
+ V.last={t:n,at:now};
  vcommit();
  const acts=vparse(text,s);
  V.pend={text,acts};clearTimeout(V.tm);
  V.tm=setTimeout(acts.some(a=>a.ok)?vcommit:vcancel,acts.some(a=>a.ok)?2000:4000);
  render();
 }
-function vcancel(){clearTimeout(V.tm);V.pend=null;if(document.getElementById('app'))render()}
+function vcancel(){clearTimeout(V.tm);V.pend=null;V.last=null;if(document.getElementById('app'))render()}
 function vcommit(){
  clearTimeout(V.tm);const p=V.pend;V.pend=null;if(!p)return;
  const s=curSet(),done=p.acts.filter(a=>a.ok);
@@ -722,13 +735,17 @@ function vcommit(){
  render();
 }
 function toggleMic(){
- if(V.on){V.on=false;V.live='';try{V.rec&&V.rec.stop()}catch(e){}return}
+ if(V.on){   // ausschalten: den Erkenner abkoppeln, damit er nie wieder etwas meldet oder neu startet
+  V.on=false;V.live='';const o=V.rec;V.rec=null;
+  if(o){o.onresult=o.onend=o.onerror=o.onstart=null;try{o.abort()}catch(e){try{o.stop()}catch(x){}}}
+  return}
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!SR){toast('Spracherkennung wird hier nicht unterstützt (am Handy Chrome oder Safari im Browser nutzen)');return}
- const r=new SR();r.lang='de-DE';r.continuous=true;r.interimResults=true;
- r.onresult=e=>{let live='';for(let i=e.resultIndex;i<e.results.length;i++){const x=e.results[i];if(x.isFinal)vhear(x[0].transcript);else live+=x[0].transcript}V.live=live;const el=document.getElementById('vlive');if(el)el.textContent=live?'… '+live:''};
- r.onend=()=>{if(V.on){try{r.start()}catch(x){}}};
- r.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){V.on=false;toast('Mikrofon nicht erlaubt');render()}};
+ const r=new SR();r.lang='de-DE';r.continuous=true;r.interimResults=true;let seen=0;   // seen: so viele fertige Ergebnisse dieser Sitzung sind schon verarbeitet
+ r.onstart=()=>{seen=0};
+ r.onresult=e=>{if(V.rec!==r)return;let live='';for(let i=Math.max(e.resultIndex||0,seen);i<e.results.length;i++){const x=e.results[i];if(x.isFinal){seen=i+1;vhear(x[0].transcript)}else live+=x[0].transcript}V.live=live;const el=document.getElementById('vlive');if(el)el.textContent=live?'… '+live:''};
+ r.onend=()=>{if(V.on&&V.rec===r){try{r.start()}catch(x){}}};
+ r.onerror=e=>{if(V.rec!==r)return;if(e.error==='not-allowed'||e.error==='service-not-allowed'){V.on=false;V.rec=null;toast('Mikrofon nicht erlaubt');render()}};
  V.rec=r;V.on=true;try{r.start()}catch(x){}
 }
 function vbarHtml(){
